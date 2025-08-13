@@ -2,15 +2,17 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import morgan from "morgan";
 
 
 // routes imports
+import Authorization from './src/Routes/Route/Authorization.js'
 import SuperAdmin from './src/Routes/Route/SuperAdmin.js'
 
 dotenv.config();
-
 const app = express();
 
+app.use(morgan("dev"))
 app.use(cors());
 app.use(express.json());
 
@@ -26,7 +28,9 @@ mongoose.connect("mongodb://localhost:27017/mydatabase", {
 app.get("/", (req, res) => {
   res.send("Server is running");
 });
+
 app.use("/api/superadmin", SuperAdmin);
+app.use('/api/auth', Authorization)
 
 
 app.use((req, res, next) => {
