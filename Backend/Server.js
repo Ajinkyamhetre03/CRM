@@ -8,6 +8,10 @@ import morgan from "morgan";
 // routes imports
 import Authorization from './src/Routes/Route/Authorization.js'
 import SuperAdmin from './src/Routes/Route/SuperAdmin.js'
+import Hr from './src/Routes/Route/hr.js'
+import Candidate from "./src/Routes/Route/candidate.js"
+
+import userRoutes from './src/Routes/Route/DemoUSer.js'
 
 dotenv.config();
 const app = express();
@@ -16,7 +20,7 @@ app.use(morgan("dev"))
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://localhost:27017/mydatabase", {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).then(() => {
@@ -31,6 +35,14 @@ app.get("/", (req, res) => {
 
 app.use("/api/superadmin", SuperAdmin);
 app.use('/api/auth', Authorization)
+app.use('/api/hr', Hr)
+app.use('/api/candidate', Candidate)
+
+if(process.env.DEVELOPMENT=="true"){
+
+  app.use('/api', userRoutes);
+}
+
 
 
 app.use((req, res, next) => {

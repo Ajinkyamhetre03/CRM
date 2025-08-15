@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import bcrypt from 'bcryptjs';
 
 // Centralized enums
-const roles = ['superadmin', 'admin', 'hr', 'manager', 'employee', 'intern', 'ceo'];
+const roles = ['ceo', 'superadmin', 'admin', 'manager', 'employee', 'intern'];
 const departments = ['hr', 'iot', 'software', 'financial', 'business'];
 
 const userSchema = new mongoose.Schema({
@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
         unique: true,
         uppercase: true,
         trim: true,
-        match: /^EMP\d{3,}$/ // Example: EMP001
+        match: /^EMP\d{2}[A-Z]{2,3}\d{3}$/ // Example: EMP25CE001 or EMP25HRM001
     },
     username: {
         type: String,
@@ -34,8 +34,11 @@ const userSchema = new mongoose.Schema({
     department: {
         type: String,
         enum: departments,
-        required: true
+        required: function () {
+            return !['ceo', 'superadmin', 'admin'].includes(this.role);
+        }
     },
+
     email: {
         type: String,
         required: true,
@@ -48,6 +51,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         match: /^\+?\d{10,15}$/ // Allows country codes
+    },
+    Salary: {
+        type: Number,
+        required: true,
+        min: 0
     },
     accountType: {
         type: Boolean,
@@ -64,7 +72,10 @@ const userSchema = new mongoose.Schema({
     },
     lastLogin: Date,
     createdBy: String,
-    profileImage: String
+    profileImage: {
+        type: String,
+        default: 'https://res.cloudinary.com/dpjymq0vc/image/upload/v1750147101/cld-sample-2.jpg'
+    }
 }, { timestamps: true });
 
 // Hash password before saving
@@ -84,5 +95,4 @@ userSchema.methods.comparePassword = function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model('User', userSchema);
-// This code defines a User model with various fields and methods for password hashing and comparison.
+export default mongoose.models.User || mongoose.model('User', userSchema);

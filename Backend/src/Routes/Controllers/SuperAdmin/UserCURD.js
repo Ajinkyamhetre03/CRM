@@ -25,11 +25,9 @@ const UserCURD = {
             res.status(201).json(userWithoutPassword);
         } catch (error) {
             console.error("Error creating user:", error);
-            res.status(400).json({ error: "Bad request" });
+            res.status(400).json({ error: error.message });
         }
     },
-
-
     updateUser: async (req, res) => {
         try {
             const { id } = req.params;

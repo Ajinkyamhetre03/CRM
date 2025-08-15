@@ -1,22 +1,24 @@
+export function checkRoleAndDepartment(allowedRoles = [], allowedDepartments = []) {
+    // Roles that don't require department check
+    const skipDepartmentFor = ["superadmin", "admin", "ceo"];
 
-// ===== src/middleware/roleCheck.js =====
-export const checkRole = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                message: 'Access denied. Insufficient permissions.'
-            });
-        }
-        next();
-    };
-};
+        const userRole = req.user?.role?.toLowerCase();
+        const userDepartment = req.user?.department;
 
-export const checkVerified = (req, res, next) => {
-    if (req.user.role === 'farmer' && !req.user.isVerified) {
-        return res.status(403).json({
-            message: 'Account not verified. Please wait for admin approval.'
-        });
-    }
+        if (!userRole || !allowedRoles.map(r => r.toLowerCase()).includes(userRole)) {
+            return res.status(403).json({ message: "Access denied: Role not allowed" });
+        }
+
+        // Skip department check if role is in skipDepartmentFor
+        if (!skipDepartmentFor.includes(userRole)) {
+            if (!userDepartment || !allowedDepartments.map(d => d.toLowerCase()).includes(userDepartment.toLowerCase())) {
+                return res.status(403).json({ message: "Access denied: Department not allowed" });
+            }
+        }
+
     next();
-};
+    };
+}
+
 
