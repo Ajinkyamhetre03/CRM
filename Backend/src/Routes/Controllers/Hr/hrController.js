@@ -62,29 +62,15 @@ export const createJob = async (req, res) => {
 
 export const getAllJobs = async (req, res) => {
     try {
-        const { page = 1, limit = 10, status, department } = req.query;
 
-        const filter = {};
-        if (status) filter.status = status;
-        if (department) filter.department = department;
-
-        const jobs = await Job.find(filter)
+        const jobs = await Job.find({})
             .populate('createdBy', 'username email')
             .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
 
-        const total = await Job.countDocuments(filter);
 
         res.status(200).json({
             success: true,
-            data: jobs,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total,
-                pages: Math.ceil(total / limit)
-            }
+            data: jobs
         });
     } catch (error) {
         res.status(500).json({

@@ -409,56 +409,68 @@ const Job = () => {
       {/* View Job Modal */}
       {showViewModal && viewJob && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-xl flex justify-center items-center p-4 z-50">
-          <div className="relative bg-white/20 dark:bg-gray-900/30 backdrop-blur-lg border text-gray-300 border-white/20 rounded-2xl shadow-xl p-6 w-full max-w-md overflow-y-auto max-h-screen">
+          <div className="relative bg-white dark:bg-gray-900 backdrop-blur-lg border text-gray-800 dark:text-gray-300 border-white/20 rounded-2xl shadow-xl w-full max-w-3xl h-[90vh] flex flex-col">
+
+            {/* Close Button */}
             <button
               onClick={() => setShowViewModal(false)}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-300"
             >
               <X size={20} />
             </button>
-            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white px-6 pt-6">
               Job Details
             </h2>
-            <p>
-              <b>Title:</b> {viewJob.jobTitle}
-            </p>
-            <p>
-              <b>Location:</b> {viewJob.jobLocation}
-            </p>
-            <p>
-              <b>Experience:</b> {viewJob.experience}
-            </p>
-            <p>
-              <b>Shift:</b> {viewJob.shift}
-            </p>
-            <p>
-              <b>Department:</b> {viewJob.department}
-            </p>
-            <p>
-              <b>Status:</b> {viewJob.status}
-            </p>
-            <p>
-              <b>Description:</b> {viewJob.jobDescription}
-            </p>
-            <p>
-              <b>Responsibilities:</b> {viewJob.keyResponsibilities.join(", ")}
-            </p>
-            <p>
-              <b>Skills:</b> {viewJob.requiredSkills.join(", ")}
-            </p>
-            <p>
-              <b>Deadline:</b>{" "}
-              {viewJob.applicationDeadline
-                ? new Date(viewJob.applicationDeadline).toLocaleDateString()
-                : "-"}
-            </p>
-            <p>
-              <b>Applications:</b> {viewJob.currentApplications ?? 0}/
-              {viewJob.maxApplications}
-            </p>
+
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto px-6 pb-6 space-y-3 break-words">
+              <p><b>Title:</b> {viewJob.jobTitle}</p>
+              <p><b>Location:</b> {viewJob.jobLocation}</p>
+              <p><b>Experience:</b> {viewJob.experience}</p>
+              <p><b>Shift:</b> {viewJob.shift}</p>
+              <p><b>Department:</b> {viewJob.department}</p>
+              <p><b>Status:</b> {viewJob.status}</p>
+              <p><b>Description:</b> {viewJob.jobDescription}</p>
+
+              <div>
+                <b>Responsibilities:</b>
+                <ul className="list-disc ml-6">
+                  {viewJob.keyResponsibilities?.map((resp, i) => (
+                    <li key={i}>{resp}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <b>Skills:</b>
+                <ul className="list-disc ml-6">
+                  {viewJob.requiredSkills?.map((skill, i) => (
+                    <li key={i}>{skill}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <p>
+                <b>Deadline:</b>{" "}
+                {viewJob.applicationDeadline
+                  ? new Date(viewJob.applicationDeadline).toLocaleDateString()
+                  : "-"}
+              </p>
+              <p>
+                <b>Applications:</b> {viewJob.currentApplications ?? 0}/
+                {viewJob.maxApplications}
+              </p>
+
+              <div>
+                <p><b>CreatedBy:</b> {viewJob.createdBy.email}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
 
       {/* Delete Confirmation Modal */}
       {showConfirm && (

@@ -9,13 +9,20 @@ import Login from './components/Pages/Auth/Login';
 
 // Layout Components
 import Layout from './components/Layout/Layout';
+import Publiclayout from './components/Layout/Publiclayout';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 
 // Common Pages
-import Home from './components/Pages/Common/Home';
 import Dashboard from './components/Pages/Common/Dashboard';
 import Unauthorized from './components/Pages/Common/Unauthorized';
-import Profile from './components/Pages/Common/Profile';
+
+import HomePage from './components/Pages/public/HomePage'
+import ContactPage from './components/Pages/public/ContactPage'
+import AboutPage from './components/Pages/public/AboutPage'
+import ServicePage from './components/Pages/public/ServicePage'
+import PortfolioPage from './components/Pages/public/PortfolioPage'
+import ResourcesPage from './components/Pages/public/ResourcesPage'
+import CareersPage from './components/Pages/public/CareersPage'
 
 // SuperAdmin Pages
 import AllUsers from './components/Pages/SuperAdmin/AllUsers';
@@ -180,7 +187,17 @@ function App() {
     <>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Publiclayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="service" element={<ServicePage />} />
+          <Route path="portfolio" element={<PortfolioPage />} />
+          <Route path="resources" element={<ResourcesPage />} />
+          <Route path="contact" element={<ContactPage />} />
+          <Route path="careers" element={<CareersPage />} />
+        </Route>
+
+
         <Route path="/login" element={
           isAuthenticated ? <Navigate to="/app/dashboard" replace /> : <Login />
         } />
@@ -197,7 +214,6 @@ function App() {
 
           {/* Common Routes - All authenticated users */}
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="profile" element={<Profile />} />
 
           {/* SuperAdmin Routes */}
           <Route path="users" element={
@@ -797,7 +813,7 @@ function App() {
         </Route>
 
         {/* Fallback for undefined routes */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/app/dashboard" : "/login"} replace />} />
       </Routes>
 
       <ToastContainer
