@@ -7,14 +7,14 @@ dotenv.config();
 
 const seedJobs = async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/mydatabase", {
+    await mongoose.connect("mongodb+srv://coppercloud2023:sOoFdXTHbRmv6vQ8@cluster0.imnm6.mongodb.net/MyPlatfromIOT", {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
 
     console.log("✅ Connected to MongoDB");
 
-    const createdBy = "689f5931d25c914f3b8f4b15"; // Example User ID
+    const createdBy = "68a0e9e511dc1cc1499277cb"; // Example User ID
 
  const jobs = [
   // HR Department Jobs
@@ -43,7 +43,7 @@ const seedJobs = async () => {
       "Conflict resolution and negotiation skills",
       "Performance management expertise"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+     createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-15"),
     maxApplications: 50,
     currentApplications: 12
@@ -73,7 +73,7 @@ const seedJobs = async () => {
       "Understanding of labor laws",
       "Attention to detail and organizational skills"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-20"),
     maxApplications: 80,
     currentApplications: 23
@@ -103,7 +103,7 @@ const seedJobs = async () => {
       "Strong organizational skills",
       "Professional attitude and confidentiality"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-10"),
     maxApplications: 100,
     currentApplications: 45
@@ -135,7 +135,7 @@ const seedJobs = async () => {
       "Knowledge of embedded systems and microcontrollers",
       "Understanding of IoT security and edge computing"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-25"),
     maxApplications: 30,
     currentApplications: 8
@@ -168,7 +168,7 @@ const seedJobs = async () => {
       "Familiarity with edge computing and real-time data processing",
       "Experience with version control tools like Git"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-18"),
     maxApplications: 75,
     currentApplications: 32
@@ -198,7 +198,7 @@ const seedJobs = async () => {
       "Problem-solving mindset and eagerness to learn",
       "Basic knowledge of networking concepts"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-12"),
     maxApplications: 120,
     currentApplications: 67
@@ -232,7 +232,7 @@ const seedJobs = async () => {
       "Excellent leadership and communication skills",
       "Experience with Agile/Scrum methodologies"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-22"),
     maxApplications: 40,
     currentApplications: 15
@@ -264,7 +264,7 @@ const seedJobs = async () => {
       "Problem-solving and analytical thinking skills",
       "Experience with API development and integration"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-20"),
     maxApplications: 90,
     currentApplications: 41
@@ -294,7 +294,7 @@ const seedJobs = async () => {
       "Good communication and teamwork skills",
       "Basic knowledge of software development lifecycle"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-15"),
     maxApplications: 150,
     currentApplications: 89
@@ -328,7 +328,7 @@ const seedJobs = async () => {
       "Understanding of tax regulations and compliance",
       "Excellent leadership and communication skills"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-28"),
     maxApplications: 35,
     currentApplications: 11
@@ -360,7 +360,7 @@ const seedJobs = async () => {
       "Attention to detail and accuracy",
       "Good communication and presentation skills"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-25"),
     maxApplications: 70,
     currentApplications: 28
@@ -390,7 +390,7 @@ const seedJobs = async () => {
       "Good organizational and time management skills",
       "Professional attitude and eagerness to learn"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-12"),
     maxApplications: 80,
     currentApplications: 34
@@ -424,7 +424,7 @@ const seedJobs = async () => {
       "Knowledge of CRM systems and sales processes",
       "Results-driven with strong negotiation skills"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-30"),
     maxApplications: 45,
     currentApplications: 19
@@ -456,7 +456,7 @@ const seedJobs = async () => {
       "Excellent communication and stakeholder management skills",
       "Understanding of software development lifecycle"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-23"),
     maxApplications: 85,
     currentApplications: 37
@@ -486,7 +486,7 @@ const seedJobs = async () => {
       "Enthusiastic and eager to learn",
       "Professional attitude and presentation skills"
     ],
-    createdBy: "689f5931d25c914f3b8f4b15",
+    createdBy: "68a0e9e511dc1cc1499277cb",
     applicationDeadline: new Date("2025-09-14"),
     maxApplications: 100,
     currentApplications: 52

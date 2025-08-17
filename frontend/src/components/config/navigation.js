@@ -36,7 +36,8 @@ export const navigationConfig = {
 export const managerNavigationConfig = {
   hr: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
-    { name: 'Jobs Posting', path: '/app/hr/jobs', icon: FileText },
+    { name: 'Job Management', path: '/app/hr/jobs', icon: FileText },
+    { name: 'Application Management', path: '/app/hr/application', icon: UserPlus },
     { name: 'HR Team', path: '/app/hr/team-management', icon: Users },
     { name: 'Recruitment', path: '/app/hr/recruitment', icon: UserPlus },
     { name: 'Employee Relations', path: '/app/hr/employee-relations', icon: UserCheck },

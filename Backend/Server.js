@@ -4,6 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 
+import { apiTracker } from "./src/middleware/apiTracker.js";
+
 
 // routes imports
 import Authorization from './src/Routes/Route/Authorization.js'
@@ -16,6 +18,7 @@ import userRoutes from './src/Routes/Route/DemoUSer.js'
 dotenv.config();
 const app = express();
 
+app.use(apiTracker);
 app.use(morgan("dev"))
 app.use(cors());
 app.use(express.json());
@@ -38,8 +41,7 @@ app.use('/api/auth', Authorization)
 app.use('/api/hr', Hr)
 app.use('/api/candidate', Candidate)
 
-if(process.env.DEVELOPMENT=="true"){
-
+if (process.env.DEVELOPMENT == "true") {
   app.use('/api', userRoutes);
 }
 

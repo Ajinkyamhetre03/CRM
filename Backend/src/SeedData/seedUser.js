@@ -30,7 +30,7 @@ const globalRoleCodeMap = {
 
 const seedUsers = async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/mydatabase", {
+    await mongoose.connect("mongodb+srv://coppercloud2023:sOoFdXTHbRmv6vQ8@cluster0.imnm6.mongodb.net/MyPlatfromIOT", {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });

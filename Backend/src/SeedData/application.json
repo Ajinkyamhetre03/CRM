@@ -1,0 +1,582 @@
+[
+  {
+    "fullName": "Vikram Joshi",
+    "email": "vikram.joshi@example.com",
+    "phone": "+919543210987",
+    "address": {
+      "street": "12 Shivaji Nagar",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "zipCode": "411016",
+      "country": "India"
+    },
+    "dateOfBirth": "1996-05-10",
+    "experience": "3 years",
+    "currentSalary": 600000,
+    "expectedSalary": 750000,
+    "noticePeriod": "30 days",
+    "education": [
+      {
+        "degree": "B.E. in Electrical Engineering",
+        "institution": "VIT Pune",
+        "year": 2017,
+        "percentage": 76
+      }
+    ],
+    "skills": ["IoT Security", "Cloud Computing", "AWS IoT"],
+    "previousExperience": [
+      {
+        "company": "SecureIoT Solutions",
+        "position": "IoT Security Specialist",
+        "duration": "3 years",
+        "responsibilities": "Implemented IoT security measures and managed AWS IoT configurations"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/vikram_resume",
+    "coverLetter": "Security in IoT is my specialization and passion.",
+    "portfolioUrl": "https://vikramjoshi.dev",
+    "linkedinProfile": "https://linkedin.com/in/vikramjoshi",
+    "whyInterested": "I aim to ensure secure deployment of IoT systems.",
+    "department": "IoT",
+    "role": "Manager"
+  },
+  {
+    "fullName": "Anjali Deshmukh",
+    "email": "anjali.deshmukh@example.com",
+    "phone": "+919812345678",
+    "address": {
+      "street": "45 FC Road",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "zipCode": "411004",
+      "country": "India"
+    },
+    "dateOfBirth": "1998-03-14",
+    "experience": "2 years",
+    "currentSalary": 400000,
+    "expectedSalary": 550000,
+    "noticePeriod": "15 days",
+    "education": [
+      {
+        "degree": "B.Tech in Computer Engineering",
+        "institution": "MIT Pune",
+        "year": 2019,
+        "percentage": 80
+      }
+    ],
+    "skills": ["Node.js", "MQTT", "MongoDB"],
+    "previousExperience": [
+      {
+        "company": "HomeTech Automation",
+        "position": "IoT Developer",
+        "duration": "2 years",
+        "responsibilities": "Developed IoT dashboards and device connectivity"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/anjali_resume",
+    "coverLetter": "IoT development excites me as it merges hardware and software.",
+    "portfolioUrl": "https://anjalideshmukh.dev",
+    "linkedinProfile": "https://linkedin.com/in/anjalideshmukh",
+    "whyInterested": "I want to work on scalable IoT platforms.",
+    "department": "IoT",
+    "role": "Employee"
+  },
+  {
+    "fullName": "Rohan Kulkarni",
+    "email": "rohan.kulkarni@example.com",
+    "phone": "+919876543210",
+    "address": {
+      "street": "7 MG Road",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "zipCode": "560001",
+      "country": "India"
+    },
+    "dateOfBirth": "2000-11-20",
+    "experience": "Fresher",
+    "currentSalary": 0,
+    "expectedSalary": 300000,
+    "noticePeriod": "Immediate",
+    "education": [
+      {
+        "degree": "B.E. in Electronics",
+        "institution": "RVCE Bengaluru",
+        "year": 2021,
+        "percentage": 72
+      }
+    ],
+    "skills": ["Arduino", "C Programming", "Embedded Systems"],
+    "previousExperience": [],
+    "resumeUrl": "https://drive.google.com/file/d/rohan_resume",
+    "coverLetter": "Looking for an opportunity to gain real-world IoT experience.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/rohankulkarni",
+    "whyInterested": "I want to start my career in IoT with hands-on projects.",
+    "department": "IoT",
+    "role": "Intern"
+  },
+  {
+    "fullName": "Sneha Patil",
+    "email": "sneha.patil@example.com",
+    "phone": "+918745632190",
+    "address": {
+      "street": "88 Hinjewadi",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "zipCode": "411057",
+      "country": "India"
+    },
+    "dateOfBirth": "1994-07-18",
+    "experience": "6 years",
+    "currentSalary": 900000,
+    "expectedSalary": 1100000,
+    "noticePeriod": "60 days",
+    "education": [
+      {
+        "degree": "MBA in HR",
+        "institution": "Symbiosis Pune",
+        "year": 2016,
+        "percentage": 85
+      }
+    ],
+    "skills": ["Talent Acquisition", "HR Policies", "Employee Engagement"],
+    "previousExperience": [
+      {
+        "company": "TechHire Pvt Ltd",
+        "position": "HR Manager",
+        "duration": "6 years",
+        "responsibilities": "Managed recruitment and employee retention programs"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/sneha_resume",
+    "coverLetter": "I believe people are the core strength of a company.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/snehapatil",
+    "whyInterested": "To build a strong HR foundation for the organization.",
+    "department": "HR",
+    "role": "Manager"
+  },
+  {
+    "fullName": "Aditya Sharma",
+    "email": "aditya.sharma@example.com",
+    "phone": "+919898765432",
+    "address": {
+      "street": "12 Andheri West",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400053",
+      "country": "India"
+    },
+    "dateOfBirth": "1997-02-25",
+    "experience": "3 years",
+    "currentSalary": 450000,
+    "expectedSalary": 600000,
+    "noticePeriod": "30 days",
+    "education": [
+      {
+        "degree": "BBA",
+        "institution": "NMIMS Mumbai",
+        "year": 2018,
+        "percentage": 78
+      }
+    ],
+    "skills": ["Payroll", "HRMS", "Onboarding"],
+    "previousExperience": [
+      {
+        "company": "PeopleSoft India",
+        "position": "HR Executive",
+        "duration": "3 years",
+        "responsibilities": "Handled payroll and employee data management"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/aditya_resume",
+    "coverLetter": "HR management is my professional passion.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/adityasharma",
+    "whyInterested": "To strengthen employee onboarding and HRMS processes.",
+    "department": "HR",
+    "role": "Employee"
+  },
+  {
+    "fullName": "Priya Nair",
+    "email": "priya.nair@example.com",
+    "phone": "+918800112233",
+    "address": {
+      "street": "22 Whitefield",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "zipCode": "560066",
+      "country": "India"
+    },
+    "dateOfBirth": "2001-09-10",
+    "experience": "Fresher",
+    "currentSalary": 0,
+    "expectedSalary": 250000,
+    "noticePeriod": "Immediate",
+    "education": [
+      {
+        "degree": "B.Com",
+        "institution": "Christ University",
+        "year": 2022,
+        "percentage": 81
+      }
+    ],
+    "skills": ["Communication", "Recruitment Assistance"],
+    "previousExperience": [],
+    "resumeUrl": "https://drive.google.com/file/d/priya_resume",
+    "coverLetter": "I want to begin my career in HR.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/priyanair",
+    "whyInterested": "To gain HR experience as an intern.",
+    "department": "HR",
+    "role": "Intern"
+  },
+  {
+    "fullName": "Ajinkya Mhetre",
+    "email": "ajinkya.mhetre@example.com",
+    "phone": "+919944332211",
+    "address": {
+      "street": "15 Baner",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "zipCode": "411045",
+      "country": "India"
+    },
+    "dateOfBirth": "1995-12-05",
+    "experience": "5 years",
+    "currentSalary": 1200000,
+    "expectedSalary": 1500000,
+    "noticePeriod": "90 days",
+    "education": [
+      {
+        "degree": "M.Tech in Computer Science",
+        "institution": "IIT Bombay",
+        "year": 2017,
+        "percentage": 88
+      }
+    ],
+    "skills": ["MERN Stack", "Microservices", "DevOps"],
+    "previousExperience": [
+      {
+        "company": "TechVision Pvt Ltd",
+        "position": "Senior Software Engineer",
+        "duration": "5 years",
+        "responsibilities": "Led development teams and built scalable applications"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/ajinkya_resume",
+    "coverLetter": "Building scalable software is my passion.",
+    "portfolioUrl": "https://ajinkyamhetre.dev",
+    "linkedinProfile": "https://linkedin.com/in/ajinkyamhetre",
+    "whyInterested": "To lead software development projects with innovation.",
+    "department": "Software",
+    "role": "Manager"
+  },
+  {
+    "fullName": "Neha Kapoor",
+    "email": "neha.kapoor@example.com",
+    "phone": "+919700123456",
+    "address": {
+      "street": "67 Sector 18",
+      "city": "Noida",
+      "state": "Uttar Pradesh",
+      "zipCode": "201301",
+      "country": "India"
+    },
+    "dateOfBirth": "1998-08-21",
+    "experience": "2 years",
+    "currentSalary": 500000,
+    "expectedSalary": 700000,
+    "noticePeriod": "45 days",
+    "education": [
+      {
+        "degree": "B.Tech in IT",
+        "institution": "Amity University",
+        "year": 2019,
+        "percentage": 82
+      }
+    ],
+    "skills": ["React", "Node.js", "MongoDB"],
+    "previousExperience": [
+      {
+        "company": "CodeCraft Pvt Ltd",
+        "position": "Software Engineer",
+        "duration": "2 years",
+        "responsibilities": "Developed frontend features and APIs"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/neha_resume",
+    "coverLetter": "I love solving problems with code.",
+    "portfolioUrl": "https://nehakapoor.dev",
+    "linkedinProfile": "https://linkedin.com/in/nehakapoor",
+    "whyInterested": "To grow as a full stack developer.",
+    "department": "Software",
+    "role": "Employee"
+  },
+  {
+    "fullName": "Rahul Verma",
+    "email": "rahul.verma@example.com",
+    "phone": "+919933445566",
+    "address": {
+      "street": "12 HSR Layout",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "zipCode": "560102",
+      "country": "India"
+    },
+    "dateOfBirth": "2002-04-15",
+    "experience": "Fresher",
+    "currentSalary": 0,
+    "expectedSalary": 280000,
+    "noticePeriod": "Immediate",
+    "education": [
+      {
+        "degree": "B.E. in Computer Science",
+        "institution": "PES University",
+        "year": 2023,
+        "percentage": 79
+      }
+    ],
+    "skills": ["JavaScript", "HTML", "CSS"],
+    "previousExperience": [],
+    "resumeUrl": "https://drive.google.com/file/d/rahul_resume",
+    "coverLetter": "Looking to kickstart my software career.",
+    "portfolioUrl": "https://rahulverma.dev",
+    "linkedinProfile": "https://linkedin.com/in/rahulverma",
+    "whyInterested": "To learn modern web development.",
+    "department": "Software",
+    "role": "Intern"
+  },
+  {
+    "fullName": "Dhanashree Kambale",
+    "email": "dhanashree.kambale@example.com",
+    "phone": "+919966778899",
+    "address": {
+      "street": "23 Erandwane",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "zipCode": "411004",
+      "country": "India"
+    },
+    "dateOfBirth": "1993-06-30",
+    "experience": "7 years",
+    "currentSalary": 1400000,
+    "expectedSalary": 1700000,
+    "noticePeriod": "60 days",
+    "education": [
+      {
+        "degree": "MBA in Finance",
+        "institution": "SPJIMR Mumbai",
+        "year": 2015,
+        "percentage": 89
+      }
+    ],
+    "skills": ["Financial Planning", "Risk Management", "Budgeting"],
+    "previousExperience": [
+      {
+        "company": "FinServe India",
+        "position": "Finance Manager",
+        "duration": "7 years",
+        "responsibilities": "Managed financial planning and investment strategies"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/dhanashree_resume",
+    "coverLetter": "Finance is the backbone of any strong organization.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/dhanashreekambale",
+    "whyInterested": "To strengthen financial planning for the company.",
+    "department": "Financial",
+    "role": "Manager"
+  },
+  {
+    "fullName": "Karan Mehta",
+    "email": "karan.mehta@example.com",
+    "phone": "+919811223344",
+    "address": {
+      "street": "19 Bandra",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400050",
+      "country": "India"
+    },
+    "dateOfBirth": "1996-01-18",
+    "experience": "3 years",
+    "currentSalary": 500000,
+    "expectedSalary": 650000,
+    "noticePeriod": "30 days",
+    "education": [
+      {
+        "degree": "B.Com",
+        "institution": "Mumbai University",
+        "year": 2016,
+        "percentage": 76
+      }
+    ],
+    "skills": ["Accounting", "Taxation", "MS Excel"],
+    "previousExperience": [
+      {
+        "company": "AccountTech Pvt Ltd",
+        "position": "Finance Executive",
+        "duration": "3 years",
+        "responsibilities": "Handled taxation and financial records"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/karan_resume",
+    "coverLetter": "Accounting and finance excite me.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/karanmehta",
+    "whyInterested": "To grow as a finance professional.",
+    "department": "Financial",
+    "role": "Employee"
+  },
+  {
+    "fullName": "Pooja Iyer",
+    "email": "pooja.iyer@example.com",
+    "phone": "+919988776655",
+    "address": {
+      "street": "45 JP Nagar",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "zipCode": "560078",
+      "country": "India"
+    },
+    "dateOfBirth": "2001-12-02",
+    "experience": "Fresher",
+    "currentSalary": 0,
+    "expectedSalary": 220000,
+    "noticePeriod": "Immediate",
+    "education": [
+      {
+        "degree": "BBA Finance",
+        "institution": "Christ University",
+        "year": 2022,
+        "percentage": 82
+      }
+    ],
+    "skills": ["Bookkeeping", "MS Excel"],
+    "previousExperience": [],
+    "resumeUrl": "https://drive.google.com/file/d/pooja_resume",
+    "coverLetter": "Looking forward to practical experience in finance.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/poojaiyer",
+    "whyInterested": "To begin my career in finance.",
+    "department": "Financial",
+    "role": "Intern"
+  },
+  {
+    "fullName": "Pavan Devkaate",
+    "email": "pavan.devkaate@example.com",
+    "phone": "+919977665544",
+    "address": {
+      "street": "10 Kothrud",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "zipCode": "411038",
+      "country": "India"
+    },
+    "dateOfBirth": "1992-10-11",
+    "experience": "8 years",
+    "currentSalary": 1300000,
+    "expectedSalary": 1600000,
+    "noticePeriod": "90 days",
+    "education": [
+      {
+        "degree": "MBA in Marketing",
+        "institution": "Symbiosis Pune",
+        "year": 2014,
+        "percentage": 87
+      }
+    ],
+    "skills": ["Digital Marketing", "Brand Strategy", "Market Research"],
+    "previousExperience": [
+      {
+        "company": "MarketBoost Pvt Ltd",
+        "position": "Marketing Manager",
+        "duration": "8 years",
+        "responsibilities": "Led campaigns and increased brand reach"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/pavan_resume",
+    "coverLetter": "Marketing is about creating value and connection.",
+    "portfolioUrl": "https://pavandevkaate.dev",
+    "linkedinProfile": "https://linkedin.com/in/pavandevkaate",
+    "whyInterested": "To expand the company’s market presence.",
+    "department": "Business",
+    "role": "Manager"
+  },
+  {
+    "fullName": "Sonal Gupta",
+    "email": "sonal.gupta@example.com",
+    "phone": "+919955667788",
+    "address": {
+      "street": "9 Salt Lake",
+      "city": "Kolkata",
+      "state": "West Bengal",
+      "zipCode": "700091",
+      "country": "India"
+    },
+    "dateOfBirth": "1997-03-09",
+    "experience": "2 years",
+    "currentSalary": 480000,
+    "expectedSalary": 600000,
+    "noticePeriod": "30 days",
+    "education": [
+      {
+        "degree": "MBA in Business Administration",
+        "institution": "IIM Kolkata",
+        "year": 2019,
+        "percentage": 83
+      }
+    ],
+    "skills": ["Business Strategy", "Sales Operations", "CRM"],
+    "previousExperience": [
+      {
+        "company": "BizGrowth Solutions",
+        "position": "Business Analyst",
+        "duration": "2 years",
+        "responsibilities": "Analyzed market trends and supported sales strategy"
+      }
+    ],
+    "resumeUrl": "https://drive.google.com/file/d/sonal_resume",
+    "coverLetter": "Business growth through smart strategy is my aim.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/sonalgupta",
+    "whyInterested": "To contribute to business development efforts.",
+    "department": "Business",
+    "role": "Employee"
+  },
+  {
+    "fullName": "Arjun Reddy",
+    "email": "arjun.reddy@example.com",
+    "phone": "+919944556677",
+    "address": {
+      "street": "21 Jubilee Hills",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "zipCode": "500033",
+      "country": "India"
+    },
+    "dateOfBirth": "2000-05-19",
+    "experience": "Fresher",
+    "currentSalary": 0,
+    "expectedSalary": 240000,
+    "noticePeriod": "Immediate",
+    "education": [
+      {
+        "degree": "BBA",
+        "institution": "Osmania University",
+        "year": 2021,
+        "percentage": 77
+      }
+    ],
+    "skills": ["Communication", "MS Office", "Sales Support"],
+    "previousExperience": [],
+    "resumeUrl": "https://drive.google.com/file/d/arjun_resume",
+    "coverLetter": "Excited to start my career in business development.",
+    "portfolioUrl": "",
+    "linkedinProfile": "https://linkedin.com/in/arjunreddy",
+    "whyInterested": "To gain business experience as an intern.",
+    "department": "Business",
+    "role": "Intern"
+  }
+]

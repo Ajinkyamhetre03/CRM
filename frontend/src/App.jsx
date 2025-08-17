@@ -51,6 +51,7 @@ import HRRecruitment from './components/Pages/HR/Manager/Recruitment';
 import HREmployeeRelations from './components/Pages/HR/Manager/EmployeeRelations';
 import HRPolicies from './components/Pages/HR/Manager/Policies';
 import HRJobs from './components/Pages/HR/Manager/Job';
+import Application from './components/Pages/HR/Manager/Application.jsx';
 import HRTraining from './components/Pages/HR/Manager/Training';
 import HRPerformance from './components/Pages/HR/Manager/Performance';
 import HRReports from './components/Pages/HR/Manager/Reports';
@@ -321,6 +322,11 @@ function App() {
           <Route path="hr/jobs" element={
             <ProtectedRoute requiredRole="manager" requiredDepartment="hr">
               <HRJobs />
+            </ProtectedRoute>
+          } />
+          <Route path="hr/application" element={
+            <ProtectedRoute requiredRole="manager" requiredDepartment="hr">
+              <Application />
             </ProtectedRoute>
           } />
           <Route path="hr/training" element={

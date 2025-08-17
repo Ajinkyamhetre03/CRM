@@ -11,6 +11,7 @@ const Job = () => {
 
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(true);
   const [filter, setFilter] = useState("");
 
   const [showForm, setShowForm] = useState(false);
@@ -50,8 +51,10 @@ const Job = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setJobs(res.data.data);
+      setIsError(false)
     } catch (err) {
-      console.error(err);
+      console.log(err);
+      setIsError(err.message)
       setJobs([]);
       toast.error("Failed to fetch jobs");
     } finally {
@@ -83,8 +86,10 @@ const Job = () => {
       setIsEditMode(false);
       setEditJobId(null);
       fetchJobs();
+      setIsError(false)
     } catch (err) {
-      console.error(err);
+      console.log(err);
+      setIsError(err.message)
       toast.error(err.response?.data?.message || "Failed to save job!");
     }
   };
@@ -113,8 +118,10 @@ const Job = () => {
       });
       toast.success("Job deleted successfully!");
       fetchJobs();
+      setIsError(false)
     } catch (err) {
-      console.error(err);
+      console.log(err);
+      setIsError(err.message)
       toast.error(err.response?.data?.message || "Failed to delete job!");
     } finally {
       setShowConfirm(false);
@@ -148,6 +155,51 @@ const Job = () => {
       </div>
     );
   }
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] bg-gray-100 dark:bg-gray-900 overflow-hidden">
+        {/* Error Icon */}
+        <div className="bg-red-100 dark:bg-red-900 p-6 rounded-full mb-6">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-16 w-16 text-red-600 dark:text-red-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 9v2m0 4h.01M12 19c-3.866 
+               0-7-3.134-7-7s3.134-7 
+               7-7 7 3.134 7 7-3.134 7-7 7z"
+            />
+          </svg>
+        </div>
+
+        {/* Error Message */}
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2 text-center">
+          Oops! Something went wrong
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-6">
+          {isError || "An unexpected error occurred. Please try again later."}
+        </p>
+
+        {/* Action Button */}
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition"
+        >
+          Refresh Page
+        </button>
+      </div>
+    );
+  }
+
+
+
+
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen p-4">

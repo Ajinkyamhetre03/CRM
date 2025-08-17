@@ -17,4 +17,4 @@ const Recruitment = () => {
   );
 };
 
-export default Recruitment;
+export default Recruitment; 

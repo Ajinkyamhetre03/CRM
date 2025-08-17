@@ -1,416 +1,1142 @@
-import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Clock, Calendar, Users, Filter, ExternalLink, Star, Building2, Briefcase, GraduationCap, TrendingUp, ChevronDown, X } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { FourSquare } from "react-loading-indicators";
+import { toast } from "react-toastify";
+import {
+    MapPin,
+    Calendar,
+    Users,
+    Building2,
+    ExternalLink,
+    Briefcase,
+    X,
+    Filter,
+    Search,
+    Eye,
+    Plus,
+    Trash2
+} from "lucide-react";
 
-const CareersPage = () => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const base_Url = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
-    // State management
-    const [jobs, setJobs] = useState([]);
-    const [departments, setDepartments] = useState([]);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedDepartment, setSelectedDepartment] = useState('');
-    const [selectedWorkMode, setSelectedWorkMode] = useState('');
-    const [selectedLocation, setSelectedLocation] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
-
-    // Fetch data from APIs
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch jobs, departments, and stats in parallel
-                const [jobsResponse, departmentsResponse, statsResponse] = await Promise.all([
-                    fetch(`${BASE_URL}/api/public/jobs`),
-                    fetch(`${BASE_URL}/api/public/departments`),
-                    fetch(`${BASE_URL}/api/public/stats`)
-                ]);
-
-                if (!jobsResponse.ok || !departmentsResponse.ok || !statsResponse.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-
-                const [jobsData, departmentsData, statsData] = await Promise.all([
-                    jobsResponse.json(),
-                    departmentsResponse.json(),
-                    statsResponse.json()
-                ]);
-
-                setJobs(jobsData.jobs || []);
-                setDepartments(departmentsData.departments || []);
-                setStats(statsData);
-            } catch (err) {
-                setError(err.message);
-                console.error('Error fetching data:', err);
-            } finally {
-                setLoading(false);
+// Application Form Modal
+const JobApplicationModal = ({ job, onClose, onSubmit, isSubmitting }) => {
+    const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        phone: "",
+        address: {
+            street: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "India"
+        },
+        dateOfBirth: "",
+        experience: "",
+        currentSalary: "",
+        expectedSalary: "",
+        noticePeriod: "",
+        education: [
+            {
+                degree: "",
+                institution: "",
+                year: "",
+                percentage: ""
             }
-        };
-
-        fetchData();
-    }, [BASE_URL]);
-
-    // Filter jobs based on search and filters
-    const filteredJobs = jobs.filter(job => {
-        const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            job.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesDepartment = !selectedDepartment || job.department.name === selectedDepartment;
-        const matchesWorkMode = !selectedWorkMode || job.workMode === selectedWorkMode;
-        const matchesLocation = !selectedLocation || job.location.includes(selectedLocation);
-
-        return matchesSearch && matchesDepartment && matchesWorkMode && matchesLocation;
+        ],
+        skills: [""],
+        previousExperience: [
+            {
+                company: "",
+                position: "",
+                duration: "",
+                responsibilities: ""
+            }
+        ],
+        resumeUrl: "",
+        coverLetter: "",
+        portfolioUrl: "",
+        linkedinProfile: "",
+        whyInterested: ""
     });
 
-    // Get unique locations and work modes for filters
-    const uniqueLocations = [...new Set(jobs.map(job => job.location.split(', ')[1] || job.location))];
-    const uniqueWorkModes = [...new Set(jobs.map(job => job.workMode))];
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        if (name.includes('address.')) {
+            const addressField = name.split('.')[1];
+            setFormData(prev => ({
+                ...prev,
+                address: { ...prev.address, [addressField]: value }
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
 
-    // Format date
+    const handleEducationChange = (index, field, value) => {
+        const newEducation = [...formData.education];
+        newEducation[index] = { ...newEducation[index], [field]: value };
+        setFormData(prev => ({ ...prev, education: newEducation }));
+    };
+
+    const handleExperienceChange = (index, field, value) => {
+        const newExperience = [...formData.previousExperience];
+        newExperience[index] = { ...newExperience[index], [field]: value };
+        setFormData(prev => ({ ...prev, previousExperience: newExperience }));
+    };
+
+    const handleSkillChange = (index, value) => {
+        const newSkills = [...formData.skills];
+        newSkills[index] = value;
+        setFormData(prev => ({ ...prev, skills: newSkills }));
+    };
+
+    const addEducation = () => {
+        setFormData(prev => ({
+            ...prev,
+            education: [...prev.education, { degree: "", institution: "", year: "", percentage: "" }]
+        }));
+    };
+
+    const addExperience = () => {
+        setFormData(prev => ({
+            ...prev,
+            previousExperience: [...prev.previousExperience, { company: "", position: "", duration: "", responsibilities: "" }]
+        }));
+    };
+
+    const addSkill = () => {
+        setFormData(prev => ({ ...prev, skills: [...prev.skills, ""] }));
+    };
+
+    const removeEducation = (index) => {
+        if (formData.education.length > 1) {
+            const newEducation = formData.education.filter((_, i) => i !== index);
+            setFormData(prev => ({ ...prev, education: newEducation }));
+        }
+    };
+
+    const removeExperience = (index) => {
+        if (formData.previousExperience.length > 1) {
+            const newExperience = formData.previousExperience.filter((_, i) => i !== index);
+            setFormData(prev => ({ ...prev, previousExperience: newExperience }));
+        }
+    };
+
+    const removeSkill = (index) => {
+        if (formData.skills.length > 1) {
+            const newSkills = formData.skills.filter((_, i) => i !== index);
+            setFormData(prev => ({ ...prev, skills: newSkills }));
+        }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Clean up skills array
+        const cleanedData = {
+            ...formData,
+            skills: formData.skills.filter(skill => skill.trim() !== ""),
+            currentSalary: parseInt(formData.currentSalary),
+            expectedSalary: parseInt(formData.expectedSalary),
+            education: formData.education.map(edu => ({
+                ...edu,
+                year: parseInt(edu.year),
+                percentage: parseFloat(edu.percentage)
+            }))
+    };
+
+        onSubmit(cleanedData);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="relative bg-white dark:bg-gray-900 backdrop-blur-lg border text-gray-800 dark:text-gray-300 border-white/20 rounded-2xl shadow-xl w-full max-w-3xl h-[90vh] flex flex-col">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div>
+                        <h2 className="text-2xl font-bold">Apply for {job.jobTitle}</h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{job.department} • {job.jobLocation}</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Personal Information */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Personal Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Full Name *</label>
+                                <input
+                                    type="text"
+                                    name="fullName"
+                                    value={formData.fullName}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Email *</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Phone *</label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Date of Birth *</label>
+                                <input
+                                    type="date"
+                                    name="dateOfBirth"
+                                    value={formData.dateOfBirth}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Address */}
+                        <div className="space-y-4">
+                            <h4 className="font-medium">Address</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium mb-2">Street *</label>
+                                    <input
+                                        type="text"
+                                        name="address.street"
+                                        value={formData.address.street}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">City *</label>
+                                    <input
+                                        type="text"
+                                        name="address.city"
+                                        value={formData.address.city}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">State *</label>
+                                    <input
+                                        type="text"
+                                        name="address.state"
+                                        value={formData.address.state}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">ZIP Code *</label>
+                                    <input
+                                        type="text"
+                                        name="address.zipCode"
+                                        value={formData.address.zipCode}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Country *</label>
+                                    <input
+                                        type="text"
+                                        name="address.country"
+                                        value={formData.address.country}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Professional Information */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Professional Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Experience *</label>
+                                <input
+                                    type="text"
+                                    name="experience"
+                                    value={formData.experience}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., 3 years"
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Notice Period *</label>
+                                <input
+                                    type="text"
+                                    name="noticePeriod"
+                                    value={formData.noticePeriod}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., 30 days"
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Current Salary (₹) *</label>
+                                <input
+                                    type="number"
+                                    name="currentSalary"
+                                    value={formData.currentSalary}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Expected Salary (₹) *</label>
+                                <input
+                                    type="number"
+                                    name="expectedSalary"
+                                    value={formData.expectedSalary}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Education */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Education</h3>
+                            <button
+                                type="button"
+                                onClick={addEducation}
+                                className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Education
+                            </button>
+                        </div>
+                        {formData.education.map((edu, index) => (
+                            <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-medium">Education {index + 1}</h4>
+                                    {formData.education.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeEducation(index)}
+                                            className="text-red-500 hover:text-red-700"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    )}
+                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Degree *</label>
+                                        <input
+                                            type="text"
+                                            value={edu.degree}
+                                            onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Institution *</label>
+                                        <input
+                                            type="text"
+                                            value={edu.institution}
+                                            onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Year *</label>
+                                        <input
+                                            type="number"
+                                            value={edu.year}
+                                            onChange={(e) => handleEducationChange(index, 'year', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Percentage *</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={edu.percentage}
+                                            onChange={(e) => handleEducationChange(index, 'percentage', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Skills */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Skills</h3>
+                            <button
+                                type="button"
+                                onClick={addSkill}
+                                className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Skill
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {formData.skills.map((skill, index) => (
+                                <div key={index} className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={skill}
+                                        onChange={(e) => handleSkillChange(index, e.target.value)}
+                                        placeholder="Enter skill"
+                                        className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    />
+                                    {formData.skills.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeSkill(index)}
+                                            className="p-3 text-red-500 hover:text-red-700"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Previous Experience */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Previous Experience</h3>
+                            <button
+                                type="button"
+                                onClick={addExperience}
+                                className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Experience
+                            </button>
+                        </div>
+                        {formData.previousExperience.map((exp, index) => (
+                            <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-medium">Experience {index + 1}</h4>
+                                    {formData.previousExperience.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExperience(index)}
+                                            className="text-red-500 hover:text-red-700"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Company *</label>
+                                        <input
+                                            type="text"
+                                            value={exp.company}
+                                            onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Position *</label>
+                                        <input
+                                            type="text"
+                                            value={exp.position}
+                                            onChange={(e) => handleExperienceChange(index, 'position', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Duration *</label>
+                                        <input
+                                            type="text"
+                                            value={exp.duration}
+                                            onChange={(e) => handleExperienceChange(index, 'duration', e.target.value)}
+                                            placeholder="e.g., 2 years"
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium mb-1">Responsibilities *</label>
+                                        <textarea
+                                            value={exp.responsibilities}
+                                            onChange={(e) => handleExperienceChange(index, 'responsibilities', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            rows="3"
+                                            required
+                                        />
+                                    </div>
+                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Additional Information */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Additional Information</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Resume URL *</label>
+                                <input
+                                    type="url"
+                                    name="resumeUrl"
+                                    value={formData.resumeUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://drive.google.com/file/d/..."
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Portfolio URL</label>
+                                <input
+                                    type="url"
+                                    name="portfolioUrl"
+                                    value={formData.portfolioUrl}
+                                    onChange={handleInputChange}
+                                    placeholder="https://yourportfolio.com"
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">LinkedIn Profile *</label>
+                                <input
+                                    type="url"
+                                    name="linkedinProfile"
+                                    value={formData.linkedinProfile}
+                                    onChange={handleInputChange}
+                                    placeholder="https://linkedin.com/in/yourprofile"
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Cover Letter *</label>
+                                <textarea
+                                    name="coverLetter"
+                                    value={formData.coverLetter}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    rows="4"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Why are you interested in this role? *</label>
+                                <textarea
+                                    name="whyInterested"
+                                    value={formData.whyInterested}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    rows="4"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Submitting...
+                            </>
+                        ) : (
+                            "Submit Application"
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Job Details Modal
+const JobDetailsModal = ({ job, onClose, onApply }) => {
+    if (!job) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="relative bg-white dark:bg-gray-900 backdrop-blur-lg border text-gray-800 dark:text-gray-300 border-white/20 rounded-2xl shadow-xl w-full max-w-3xl h-[90vh] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div>
+                        <h2 className="text-3xl font-bold mb-2">{job.jobTitle}</h2>
+                        <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span className="flex items-center">
+                                <Building2 className="h-4 w-4 mr-1" />
+                                Department: {job.department?.toUpperCase()}
+                            </span>
+                            <span className="flex items-center">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                {job.jobLocation}
+                            </span>
+                            <span>Experience: <span className="font-medium">{job.experience}</span></span>
+                            <span>Shift: {job.shift}</span>
+                        </div>
+                    </div>
+                    <button
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                        onClick={onClose}
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            Apply by {new Date(job.applicationDeadline).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                            })}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            {job.currentApplications}/{job.maxApplications} Applied
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3">Job Description</h3>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{job.jobDescription}</p>
+                    </div>
+
+                    {job.keyResponsibilities && job.keyResponsibilities.length > 0 && (
+                        <div>
+                            <h3 className="text-lg font-semibold mb-3">Key Responsibilities</h3>
+                            <ul className="list-disc ml-5 text-gray-700 dark:text-gray-300 space-y-2">
+                                {job.keyResponsibilities.map((kr, idx) => (
+                                    <li key={idx}>{kr}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {job.requiredSkills && job.requiredSkills.length > 0 && (
+                        <div>
+                            <h3 className="text-lg font-semibold mb-3">Required Skills</h3>
+                            <ul className="list-disc ml-5 text-gray-700 dark:text-gray-300 space-y-2">
+                                {job.requiredSkills.map((skill, idx) => (
+                                    <li key={idx}>{skill}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    >
+                        Close
+                    </button>
+                    <button
+                        onClick={onApply}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                    >
+                        Apply Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CareersPage = () => {
+    const [jobs, setJobs] = useState([]);
+    const [filteredJobs, setFilteredJobs] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedJobId, setSelectedJobId] = useState(null);
+    const [jobDetails, setJobDetails] = useState(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [showApplicationForm, setShowApplicationForm] = useState(false);
+    const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState("");
+    const [departmentFilter, setDepartmentFilter] = useState("");
+    const [locationFilter, setLocationFilter] = useState("");
+    const [experienceFilter, setExperienceFilter] = useState("");
+    const [showFilters, setShowFilters] = useState(false);
+    const [viewMode, setViewMode] = useState("cards"); // "cards" or "table"
+
+    const token = localStorage.getItem("token"); // Get token from localStorage
+
+    const fetchJobs = async () => {
+        setIsLoading(true);
+        try {
+            const res = await axios.get(`${base_Url}/api/candidate/jobs`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setJobs(res.data.data || []);
+            setFilteredJobs(res.data.data || []);
+        } catch (err) {
+            setJobs([]);
+            setFilteredJobs([]);
+            toast.error("Failed to fetch jobs");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchJobDetails = async (id) => {
+        setDetailsLoading(true);
+        try {
+            const res = await axios.get(`${base_Url}/api/candidate/jobs/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setJobDetails(res.data.data);
+        } catch (err) {
+            setJobDetails(null);
+            toast.error("Failed to load job details");
+        } finally {
+            setDetailsLoading(false);
+        }
+    };
+
+    const submitApplication = async (applicationData) => {
+        setIsSubmittingApplication(true);
+        try {
+            const res = await axios.post(
+                `${base_Url}/api/candidate/jobs/${selectedJobId}/apply`,
+                applicationData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                }
+            );
+
+            toast.success("Application submitted successfully!");
+            setShowApplicationForm(false);
+            setSelectedJobId(null);
+            setJobDetails(null);
+
+            // Refresh jobs to update application count
+            fetchJobs();
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || "Failed to submit application";
+            toast.error(errorMessage);
+        } finally {
+            setIsSubmittingApplication(false);
+        }
+    };
+
+    // Filter logic
+    const applyFilters = () => {
+        let filtered = jobs;
+
+        if (searchTerm) {
+            filtered = filtered.filter(job =>
+                job.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                job.jobDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                job.department?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (departmentFilter) {
+            filtered = filtered.filter(job => job.department === departmentFilter);
+        }
+
+        if (locationFilter) {
+            filtered = filtered.filter(job => job.jobLocation === locationFilter);
+        }
+
+        if (experienceFilter) {
+            filtered = filtered.filter(job => job.experience === experienceFilter);
+        }
+
+        setFilteredJobs(filtered);
+    };
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setDepartmentFilter("");
+        setLocationFilter("");
+        setExperienceFilter("");
+        setFilteredJobs(jobs);
+    };
+
+    // Get unique values for filter dropdowns
+    const uniqueDepartments = [...new Set(jobs.map(job => job.department))].filter(Boolean);
+    const uniqueLocations = [...new Set(jobs.map(job => job.jobLocation))].filter(Boolean);
+    const uniqueExperiences = [...new Set(jobs.map(job => job.experience))].filter(Boolean);
+
+    useEffect(() => {
+        fetchJobs();
+    }, []);
+
+    useEffect(() => {
+        if (selectedJobId) {
+            fetchJobDetails(selectedJobId);
+        }
+    }, [selectedJobId]);
+
+    useEffect(() => {
+        applyFilters();
+    }, [searchTerm, departmentFilter, locationFilter, experienceFilter, jobs]);
+
+    const handleJobClick = (jobId) => {
+        setSelectedJobId(jobId);
+    };
+
+    const handleApplyClick = () => {
+        setShowApplicationForm(true);
+    };
+
+    const closeModals = () => {
+        setSelectedJobId(null);
+        setJobDetails(null);
+        setShowApplicationForm(false);
+    };
+
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
+        return new Date(dateString).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
         });
     };
 
-    // Calculate days remaining
-    const getDaysRemaining = (deadline) => {
-        const today = new Date();
-        const deadlineDate = new Date(deadline);
-        const diffTime = deadlineDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
-    // Clear all filters
-    const clearFilters = () => {
-        setSearchTerm('');
-        setSelectedDepartment('');
-        setSelectedWorkMode('');
-        setSelectedLocation('');
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading career opportunities...</p>
-                </div>
-            </div>
+    const calculateDaysLeft = (deadline) => {
+        return Math.max(
+            Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24)),
+            0
         );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="bg-white p-8 rounded-lg shadow-md">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
-                        <p className="text-gray-600 mb-4">{error}</p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                        >
-                            Try Again
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Hero Section */}
-            <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                    <div className="text-center">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                            Launch Your Career with Us
-                        </h1>
-                        <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-                            {stats?.companyInfo?.description || "Join our internship programs and gain hands-on experience with industry leaders"}
-                        </p>
-                        <button
-                            onClick={() => window.location.href = '/track-application'}
-                            className="bg-white text-blue-600 px-4 py-2 rounded-md hover:bg-blue-700 hover:text-white mb-6"
-                        >
-                            Track Our Application
-                        </button>
-
-                        {/* Stats */}
-                        {stats && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                                <div className="bg-white/10 rounded-lg p-4">
-                                    <div className="flex items-center justify-center mb-2">
-                                        <Briefcase className="h-6 w-6 text-blue-200" />
-                                    </div>
-                                    <div className="text-2xl font-bold">{stats.totalJobs}</div>
-                                    <div className="text-blue-200 text-sm">Open Positions</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4">
-                                    <div className="flex items-center justify-center mb-2">
-                                        <Users className="h-6 w-6 text-green-300" />
-                                    </div>
-                                    <div className="text-2xl font-bold">{stats.totalApplications}</div>
-                                    <div className="text-blue-200 text-sm">Applications</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4">
-                                    <div className="flex items-center justify-center mb-2">
-                                        <GraduationCap className="h-6 w-6 text-orange-300" />
-                                    </div>
-                                    <div className="text-2xl font-bold">{stats.totalCompletedInternships}</div>
-                                    <div className="text-blue-200 text-sm">Completed</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4">
-                                    <div className="flex items-center justify-center mb-2">
-                                        <Star className="h-6 w-6 text-yellow-400" />
-                                    </div>
-                                    <div className="text-2xl font-bold">{stats.totalCertificates}</div>
-                                    <div className="text-blue-200 text-sm">Certificates</div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 pb-24">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white pb-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-center">
+                        Explore & Apply to Open Roles
+                    </h1>
+                    <p className="text-blue-100 text-center text-lg max-w-2xl mx-auto">
+                        Find your next career opportunity with us
+                    </p>
                 </div>
             </div>
 
-            {/* Search and Filters */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <div className="flex flex-col lg:flex-row gap-4">
-                        {/* Search */}
+            <div className=" px-4 sm:px-6 lg:px-8 py-8">
+                {/* Search and Filters */}
+                <div className="mb-6 space-y-4">
+                    {/* Search Bar */}
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                             <input
                                 type="text"
-                                placeholder="Search for internships..."
+                                placeholder="Search jobs, departments, or keywords..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                         </div>
-
-                        {/* Filter Toggle */}
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="lg:hidden flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
-                            <Filter className="h-5 w-5 mr-2" />
-                            Filters
-                        </button>
-
-                        {/* Desktop Filters */}
-                        <div className="hidden lg:flex gap-3">
-                            <select
-                                value={selectedDepartment}
-                                onChange={(e) => setSelectedDepartment(e.target.value)}
-                                className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex items-center gap-2 px-4 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
                             >
-                                <option value="">All Departments</option>
-                                {departments.map(dept => (
-                                    <option key={dept._id} value={dept.name}>{dept.name}</option>
-                                ))}
-                            </select>
-
-                            <select
-                                value={selectedWorkMode}
-                                onChange={(e) => setSelectedWorkMode(e.target.value)}
-                                className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="">Work Mode</option>
-                                {uniqueWorkModes.map(mode => (
-                                    <option key={mode} value={mode}>{mode.charAt(0).toUpperCase() + mode.slice(1)}</option>
-                                ))}
-                            </select>
-
-                            <select
-                                value={selectedLocation}
-                                onChange={(e) => setSelectedLocation(e.target.value)}
-                                className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="">Location</option>
-                                {uniqueLocations.map(location => (
-                                    <option key={location} value={location}>{location}</option>
-                                ))}
-                            </select>
-
-                            {(selectedDepartment || selectedWorkMode || selectedLocation || searchTerm) && (
-                                <button
-                                    onClick={clearFilters}
-                                    className="px-4 py-3 text-gray-600 hover:text-gray-800 flex items-center"
-                                >
-                                    <X className="h-4 w-4 mr-1" />
-                                    Clear
-                                </button>
-                            )}
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </button>
                         </div>
                     </div>
 
-                    {/* Mobile Filters */}
+                    {/* Filters */}
                     {showFilters && (
-                        <div className="lg:hidden mt-4 pt-4 border-t border-gray-200 space-y-3">
-                            <select
-                                value={selectedDepartment}
-                                onChange={(e) => setSelectedDepartment(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="">All Departments</option>
-                                {departments.map(dept => (
-                                    <option key={dept._id} value={dept.name}>{dept.name}</option>
-                                ))}
-                            </select>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <select
-                                    value={selectedWorkMode}
-                                    onChange={(e) => setSelectedWorkMode(e.target.value)}
-                                    className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">Work Mode</option>
-                                    {uniqueWorkModes.map(mode => (
-                                        <option key={mode} value={mode}>{mode.charAt(0).toUpperCase() + mode.slice(1)}</option>
-                                    ))}
-                                </select>
-
-                                <select
-                                    value={selectedLocation}
-                                    onChange={(e) => setSelectedLocation(e.target.value)}
-                                    className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">Location</option>
-                                    {uniqueLocations.map(location => (
-                                        <option key={location} value={location}>{location}</option>
-                                    ))}
-                                </select>
+                        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Department</label>
+                                    <select
+                                        value={departmentFilter}
+                                        onChange={(e) => setDepartmentFilter(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                    >
+                                        <option value="">All Departments</option>
+                                        {uniqueDepartments.map(dept => (
+                                            <option key={dept} value={dept}>{dept.toUpperCase()}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Location</label>
+                                    <select
+                                        value={locationFilter}
+                                        onChange={(e) => setLocationFilter(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                    >
+                                        <option value="">All Locations</option>
+                                        {uniqueLocations.map(location => (
+                                            <option key={location} value={location}>{location}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Experience</label>
+                                    <select
+                                        value={experienceFilter}
+                                        onChange={(e) => setExperienceFilter(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                    >
+                                        <option value="">All Experience Levels</option>
+                                        {uniqueExperiences.map(exp => (
+                                            <option key={exp} value={exp}>{exp}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex items-end">
+                                    <button
+                                        onClick={clearFilters}
+                                        className="w-full px-4 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        Clear Filters
+                                    </button>
+                                </div>
                             </div>
-
-                            {(selectedDepartment || selectedWorkMode || selectedLocation || searchTerm) && (
-                                <button
-                                    onClick={clearFilters}
-                                    className="w-full px-4 py-3 text-gray-600 hover:text-gray-800 flex items-center justify-center border border-gray-200 rounded-lg"
-                                >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Clear All Filters
-                                </button>
-                            )}
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Results */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        Available Positions ({filteredJobs.length})
-                    </h2>
+                {/* Jobs Count */}
+                <div className="mb-6 text-lg font-semibold">
+                    {filteredJobs.length} of {jobs.length} jobs
+                    {(searchTerm || departmentFilter || locationFilter || experienceFilter) && (
+                        <span className="text-sm font-normal text-gray-600 dark:text-gray-400 ml-2">
+                            (filtered)
+                        </span>
+                    )}
                 </div>
 
-                {filteredJobs.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No positions found</h3>
-                        <p className="text-gray-600">Try adjusting your search criteria or filters.</p>
+                {isLoading ? (
+                    <div className="flex justify-center py-24">
+                        <FourSquare
+                            color="#3b82f6"
+                            size="large"
+                            text="Loading jobs..."
+                            textColor="#6b7280"
+                        />
                     </div>
                 ) : (
-                    <div className="grid gap-6">
-                        {filteredJobs.map((job) => {
-                            const daysRemaining = getDaysRemaining(job.applicationDeadline);
-                            const spotsRemaining = job.maxApplications - job.currentApplications;
+                        <>
+                            {/* Jobs Table - Primary View */}
+                            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                                            <tr>
+                                                <th className="text-left p-4 font-semibold text-sm">Job Title</th>
+                                                <th className="text-left p-4 font-semibold text-sm hidden md:table-cell">Department</th>
+                                                <th className="text-left p-4 font-semibold text-sm hidden lg:table-cell">Location</th>
+                                                <th className="text-left p-4 font-semibold text-sm hidden xl:table-cell">Experience</th>
+                                                <th className="text-left p-4 font-semibold text-sm hidden sm:table-cell">Applications</th>
+                                                <th className="text-left p-4 font-semibold text-sm hidden lg:table-cell">Deadline</th>
+                                                <th className="text-left p-4 font-semibold text-sm w-32">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                            {filteredJobs.map((job) => {
+                                                const spotsLeft = job.maxApplications - job.currentApplications;
+                                                const daysLeft = calculateDaysLeft(job.applicationDeadline);
 
-                            return (
-                                <div
-                                    key={job._id}
-                                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200"
-                                >
-                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                                        {job.title}
-                                                    </h3>
-                                                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                                                        <Building2 className="h-4 w-4 mr-1" />
-                                                        {job.department.name}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    {daysRemaining <= 7 && (
-                                                        <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-full text-xs font-medium">
-                                                            {daysRemaining > 0 ? `${daysRemaining} days left` : 'Expired'}
-                                                        </span>
-                                                    )}
-                                                    {spotsRemaining <= 5 && spotsRemaining > 0 && (
-                                                        <span className="bg-purple-50 text-purple-600 px-2 py-1 rounded-full text-xs font-medium">
-                                                            {spotsRemaining} spots left
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                return (
+                                                    <tr
+                                                        key={job._id}
+                                                        className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                                    >
+                                                        <td className="p-4">
+                                                            <div>
+                                                                <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                                                    {job.jobTitle}
+                                                                </div>
+                                                                <div className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 max-w-xs">
+                                                                    {job.jobDescription}
+                                                                </div>
+                                                                {/* Mobile-only info */}
+                                                                <div className="md:hidden mt-2 space-y-1">
+                                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                                        <Building2 className="h-3 w-3 inline mr-1" />
+                                                                        {job.department?.toUpperCase()}
                                             </div>
-
-                                            <p className="text-gray-700 mb-4 line-clamp-2">
-                                                {job.description}
-                                            </p>
-
-                                            <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
-                                                <div className="flex items-center">
-                                                    <MapPin className="h-4 w-4 mr-1" />
-                                                    {job.location}
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <Clock className="h-4 w-4 mr-1" />
-                                                    {job.duration}
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <TrendingUp className="h-4 w-4 mr-1" />
-                                                    ₹{job.stipend.toLocaleString()}/month
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <Users className="h-4 w-4 mr-1" />
-                                                    {job.currentApplications}/{job.maxApplications} applied
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <Calendar className="h-4 w-4 mr-1" />
-                                                    Apply by {formatDate(job.applicationDeadline)}
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-2">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${job.workMode === 'remote'
-                                                        ? 'bg-green-50 text-green-600'
-                                                        : job.workMode === 'hybrid'
-                                                            ? 'bg-blue-50 text-blue-600'
-                                                            : 'bg-gray-50 text-gray-600'
-                                                        }`}>
-                                                        {job.workMode.charAt(0).toUpperCase() + job.workMode.slice(1)}
-                                                    </span>
-                                                    <span className="bg-gray-50 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
-                                                        {job.type.charAt(0).toUpperCase() + job.type.slice(1)}
-                                                    </span>
-                                                </div>
-
-                                                <button
-                                                    onClick={() => window.location.href = `/jobs/${job._id}`}
-                                                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                                                >
-                                                    View Details
-                                                    <ExternalLink className="h-4 w-4 ml-2" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                                        <MapPin className="h-3 w-3 inline mr-1" />
+                                                                        {job.jobLocation}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-sm hidden md:table-cell">
+                                                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-md px-3 text-xs font-medium">
+                                                                {job.department?.toUpperCase()}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-sm hidden lg:table-cell">
+                                                            <div className="flex items-center">
+                                                                <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                                                                {job.jobLocation}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-sm hidden xl:table-cell">
+                                                            <span className="font-medium">{job.experience}</span>
+                                                        </td>
+                                                        <td className="p-4 text-sm hidden sm:table-cell">
+                                                            <div>
+                                                                <div className="flex items-center gap-1 mb-1">
+                                                                    <Users className="h-4 w-4 text-gray-400" />
+                                                                    <span className="font-medium">{job.currentApplications}/{job.maxApplications}</span>
+                                                                </div>
+                                                                {spotsLeft <= 5 && spotsLeft > 0 && (
+                                                                    <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full">
+                                                                        {spotsLeft} spots left
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-sm hidden lg:table-cell">
+                                                            <div>
+                                                                <div className="font-medium mb-1">{formatDate(job.applicationDeadline)}</div>
+                                                                {daysLeft > 0 ? (
+                                                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 py-1 rounded-md px-3">
+                                                                        {daysLeft} days left
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 py-1 rounded-md px-3">
+                                                                        Closed
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <button
+                                                                onClick={() => handleJobClick(job._id)}
+                                                                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                                <span className="hidden sm:inline">View Details</span>
+                                                                <span className="sm:hidden">View</span>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            );
-                        })}
+
+                                {filteredJobs.length === 0 && (
+                                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                        <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                        <p className="text-lg mb-2">No jobs found matching your criteria</p>
+                                        <button
+                                            onClick={clearFilters}
+                                            className="px-4 py-2 text-blue-600 hover:text-blue-700 underline"
+                                        >
+                                            Clear filters to see all jobs
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                    </>
+                )}
+
+                {/* Job Details Modal */}
+                {selectedJobId && jobDetails && !showApplicationForm && (
+                    <JobDetailsModal
+                        job={jobDetails}
+                        onClose={closeModals}
+                        onApply={handleApplyClick}
+                    />
+                )}
+
+                {/* Application Form Modal */}
+                {showApplicationForm && jobDetails && (
+                    <JobApplicationModal
+                        job={jobDetails}
+                        onClose={closeModals}
+                        onSubmit={submitApplication}
+                        isSubmitting={isSubmittingApplication}
+                    />
+                )}
+
+                {/* Loading Modal */}
+                {selectedJobId && detailsLoading && (
+                    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <FourSquare
+                            color="#3b82f6"
+                            size="medium"
+                            text="Loading job details..."
+                            textColor="#6b7280"
+                        />
                     </div>
                 )}
             </div>
@@ -418,4 +1144,4 @@ const CareersPage = () => {
     );
 };
 
-export default CareersPage; 
+export default CareersPage;

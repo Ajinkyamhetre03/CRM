@@ -163,6 +163,11 @@ export const deleteJob = async (req, res) => {
 export const getAllApplications = async (req, res) => {
     try {
         const applications = await Application.find({})
+            .populate({
+                path: "jobId", // Reference to Job schema
+                select: "jobTitle department" // only required fields
+            })
+
         res.status(200).json({
             success: true,
             data: applications,
@@ -170,11 +175,12 @@ export const getAllApplications = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error fetching applications',
-            error: error.message
+            message: "Error fetching applications",
+            error: error.message,
         });
     }
 };
+
 
 export const getApplicationById = async (req, res) => {
     try {
@@ -230,8 +236,7 @@ export const updateApplicationStatus = async (req, res) => {
             {
                 status,
                 hrComments: comments,
-                //reviewedBy: req.user.id,
-                reviewedBy: "689cd4aa2f51dc0cd7cae7e7",
+                reviewedBy: req.user.id,
                 reviewDate: new Date()
             },
             { new: true }
