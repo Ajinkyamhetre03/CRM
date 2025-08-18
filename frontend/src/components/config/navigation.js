@@ -9,8 +9,8 @@ export const navigationConfig = {
   superadmin: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
     { name: 'All Users', path: '/app/users', icon: Users },
-    { name: 'System Settings', path: '/app/system-settings', icon: Settings },
     { name: 'Analytics', path: '/app/analytics', icon: BarChart3 },
+    { name: 'System Settings', path: '/app/system-settings', icon: Settings },
     { name: 'Audit Logs', path: '/app/audit-logs', icon: FileText },
     { name: 'Backup & Restore', path: '/app/backup', icon: Shield }
   ],

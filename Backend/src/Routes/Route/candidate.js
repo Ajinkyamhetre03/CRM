@@ -1,12 +1,16 @@
-// routes/candidate.js
+// routes/candidate.js - Updated Candidate Routes  
 import express from 'express';
 import {
     getActiveJobs,
     getJobDetails,
     submitApplication,
-    getApplicationStatus,
     completePayment,
-    setupEmployeeAccount
+    setupEmployeeAccount,
+    // New functions
+    confirmHiring,
+    submitPaymentDetails,
+    getApplicationDetails,
+    myApplication
 } from '../Controllers/Candidate/candidateController.js';
 
 const router = express.Router();
@@ -19,12 +23,18 @@ router.get('/jobs/:id', getJobDetails);
 router.post('/jobs/:jobId/apply', submitApplication);
 
 // Application status check (requires email verification)
-router.get('/applications/:applicationId/status', getApplicationStatus);
 
-// Payment completion route (accessed via email link)
+router.post('/applications/myapplication', myApplication);
+
+// New: Candidate confirmation route (accessed via email link)
+router.post('/applications/:applicationId/confirm-hiring/:token', confirmHiring);
+
+// Enhanced payment routes
+router.get('/applications/:applicationId/payment-details/:token', getApplicationDetails);
+router.post('/applications/:applicationId/payment/:token', submitPaymentDetails);
+
+// Legacy routes (keep for backward compatibility)
 router.post('/applications/:applicationId/payment', completePayment);
-
-// Employee account setup (after payment)
 router.post('/applications/:applicationId/setup-account', setupEmployeeAccount);
 
 export default router;

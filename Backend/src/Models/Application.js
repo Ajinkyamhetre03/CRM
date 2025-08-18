@@ -74,10 +74,10 @@ const applicationSchema = new mongoose.Schema({
     }],
     // Documents (as text/URLs instead of files)
     resumeUrl: {
-        type: String, // URL to resume (Google Drive, LinkedIn, etc.)
+        type: String,
         required: true
     },
-    coverLetter: String, // Text-based cover letter
+    coverLetter: String,
     portfolioUrl: String,
     linkedinProfile: String,
     // Expression/Why interested
@@ -89,7 +89,19 @@ const applicationSchema = new mongoose.Schema({
     // Application Status
     status: {
         type: String,
-        enum: ['pending', 'under_review', 'shortlisted', 'interview_scheduled', 'hired', 'rejected'],
+        enum: [
+            'pending',
+            'under_review',
+            'shortlisted',
+            'interview_scheduled',
+            'hired',
+            'rejected',
+            'candidate_confirmed',
+            'payment_pending',
+            'payment_submitted',
+            'payment_verified',
+            'employee_created'
+        ],
         default: 'pending'
     },
     reviewedBy: {
@@ -98,15 +110,30 @@ const applicationSchema = new mongoose.Schema({
     },
     reviewDate: Date,
     hrComments: String,
-    // Hiring Process
+
+    // Enhanced Hiring Process Tracking
     isHired: {
         type: Boolean,
         default: false
     },
     hiredDate: Date,
-    hiringEmailSent: {
+
+    // Candidate Confirmation Tracking
+    candidateConfirmed: {
         type: Boolean,
         default: false
+    },
+    candidateConfirmationDate: Date,
+    candidateConfirmationToken: String, // For secure confirmation links
+
+    // Payment Tracking
+    paymentRequired: {
+        type: Boolean,
+        default: false
+    },
+    paymentAmount: {
+        type: Number,
+        default: 1000
     },
     paymentCompleted: {
         type: Boolean,
@@ -114,6 +141,18 @@ const applicationSchema = new mongoose.Schema({
     },
     paymentTransactionId: String,
     paymentDate: Date,
+    paymentVerified: {
+        type: Boolean,
+        default: false
+    },
+    paymentVerifiedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    paymentVerificationDate: Date,
+    paymentToken: String, // For secure payment links
+
+    // Employee Creation
     employeeCreated: {
         type: Boolean,
         default: false
@@ -121,10 +160,57 @@ const applicationSchema = new mongoose.Schema({
     employeeId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+
+    // Email Tracking
+    emailsTracking: {
+        hireRejectEmail: {
+            sent: { type: Boolean, default: false },
+            sentDate: Date,
+            emailType: { type: String, enum: ['hire', 'reject'] }
+        },
+        candidateConfirmationEmail: {
+            sent: { type: Boolean, default: false },
+            sentDate: Date,
+            opened: { type: Boolean, default: false },
+            openedDate: Date
+        },
+        hrConfirmationEmail: {
+            sent: { type: Boolean, default: false },
+            sentDate: Date
+        },
+        paymentRequestEmail: {
+            sent: { type: Boolean, default: false },
+            sentDate: Date,
+            opened: { type: Boolean, default: false },
+            openedDate: Date
+        },
+        finalConfirmationEmail: {
+            sent: { type: Boolean, default: false },
+            sentDate: Date
+        }
+    },
+
+    // Total email count
+    totalEmailsSent: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 
 // Index for better query performance
-applicationSchema.index({ jobId: 1, status: 1, email: 1 });
+applicationSchema.index({
+    jobId: 1,
+    status: 1,
+    email: 1,
+    candidateConfirmationToken: 1,
+    paymentToken: 1
+});
+
+// Method to increment email count
+applicationSchema.methods.incrementEmailCount = function () {
+    this.totalEmailsSent += 1;
+    return this.save();
+};
 
 export default mongoose.models.Application || mongoose.model('Application', applicationSchema);

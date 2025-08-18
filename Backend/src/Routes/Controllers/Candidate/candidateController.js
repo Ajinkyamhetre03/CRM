@@ -1,392 +1,545 @@
-// controllers/candidate.js
-import Job from '../../../Models/Job.js';
+// Controllers/Candidate/candidateController.js
+import { application } from 'express';
 import Application from '../../../Models/Application.js';
-import User from '../../../Models/User.js';
+import Job from '../../../Models/Job.js';
+import { sendEmail } from '../../../utils/emailService.js';
+import crypto from 'crypto';
 
-// Get all active jobs for candidates to view
-export const getActiveJobs = async (req, res) => {
+// New: Confirm hiring by candidate (accessed via email link)
+export const confirmHiring = async (req, res) => {
     try {
-        const jobs = await Job.find({})
-        res.status(200).json({
-            success: true,
-            data: jobs,
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching jobs',
-            error: error.message
-        });
-    }
-};
+        const { applicationId, token } = req.params;
 
-// Get detailed job information
-export const getJobDetails = async (req, res) => {
-    try {
-        const job = await Job.findById(req.params.id)
-            .populate('createdBy', 'username');
+        const application = await Application.findOne({
+            _id: applicationId,
+            candidateConfirmationToken: token,
+            isHired: true
+        }).populate('jobId');
 
-        if (!job || job.status !== 'active') {
-            return res.status(404).json({
-                success: false,
-                message: 'Job not found or no longer active'
+        if (!application) {
+            return res.status(404).json({ 
+                message: 'Invalid confirmation link or application not found' 
             });
         }
 
-        res.status(200).json({
-            success: true,
-            data: job
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching job details',
-            error: error.message
-        });
-    }
-};
-
-// Submit job application
-export const submitApplication = async (req, res) => {
-    try {
-        const { jobId } = req.params;
-        const {
-            // Personal Information
-            fullName,
-            email,
-            phone,
-            address,
-            dateOfBirth,
-            // Professional Information
-            experience,
-            currentSalary,
-            expectedSalary,
-            noticePeriod,
-            // Education
-            education,
-            // Skills and Experience
-            skills,
-            previousExperience,
-            // Additional Information
-            resumeUrl,
-            coverLetter,
-            portfolioUrl,
-            linkedinProfile,
-            whyInterested
-        } = req.body;
-
-        // Check if job exists and is active
-        const job = await Job.findById(jobId);
-        if (!job || job.status !== 'active') {
-            return res.status(404).json({
-                success: false,
-                message: 'Job not found or no longer active'
-            });
-        }
-
-        // Check if application deadline has passed
-        if (new Date() > job.applicationDeadline) {
+        // Check if already confirmed
+        if (application.candidateConfirmed) {
             return res.status(400).json({
-                success: false,
-                message: 'Application deadline has passed'
+                message: 'You have already confirmed this hiring offer'
             });
         }
 
-        // Check if maximum applications reached
-        if (job.currentApplications >= job.maxApplications) {
-            return res.status(400).json({
-                success: false,
-                message: 'Maximum number of applications reached for this job'
-            });
-        }
+        // Update confirmation status
+        application.candidateConfirmed = true;
+        application.candidateConfirmationDate = new Date();
+        application.status = 'candidate_confirmed';
 
-        // Check if user has already applied for this job
-        const existingApplication = await Application.findOne({
-            jobId,
-            email: email.toLowerCase()
-        });
-
-        if (existingApplication) {
-            return res.status(400).json({
-                success: false,
-                message: 'You have already applied for this job'
-            });
-        }
-
-        // Validate required resume URL
-        if (!resumeUrl) {
-            return res.status(400).json({
-                success: false,
-                message: 'Resume URL is required (Google Drive, LinkedIn, etc.)'
-            });
-        }
-
-        // Validate resume URL format
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-        if (!urlPattern.test(resumeUrl)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please provide a valid resume URL'
-            });
-        }
-
-        // Parse JSON strings if they are strings
-        const parsedEducation = typeof education === 'string' ? JSON.parse(education) : education;
-        const parsedSkills = typeof skills === 'string' ? JSON.parse(skills) : skills;
-        const parsedPreviousExperience = typeof previousExperience === 'string' ? JSON.parse(previousExperience) : previousExperience;
-        const parsedAddress = typeof address === 'string' ? JSON.parse(address) : address;
-
-        // Create new application
-        const application = new Application({
-            jobId,
-            fullName,
-            email: email.toLowerCase(),
-            phone,
-            address: parsedAddress,
-            dateOfBirth: new Date(dateOfBirth),
-            experience,
-            currentSalary: currentSalary ? parseInt(currentSalary) : undefined,
-            expectedSalary: parseInt(expectedSalary),
-            noticePeriod,
-            education: parsedEducation,
-            skills: parsedSkills,
-            previousExperience: parsedPreviousExperience,
-            resumeUrl,
-            coverLetter,
-            portfolioUrl,
-            linkedinProfile,
-            whyInterested
-        });
+        // Generate payment token for next step
+        application.paymentToken = crypto.randomBytes(32).toString('hex');
+        application.paymentRequired = true;
 
         await application.save();
 
-        // Update job application count
-        job.currentApplications += 1;
-        await job.save();
+        // Send notification to HR
+        await sendHRNotificationEmail(application);
 
-        res.status(201).json({
-            success: true,
-            message: 'Application submitted successfully',
-            data: {
-                applicationId: application._id,
-                jobTitle: job.jobTitle
+        // Send payment request email to candidate
+        await sendPaymentRequestEmail(application);
+
+        res.status(200).json({
+            message: 'Hiring confirmation successful! Payment instructions have been sent to your email.',
+            nextStep: 'payment_required',
+            application: {
+                id: application._id,
+                status: application.status,
+                paymentRequired: application.paymentRequired,
+                paymentAmount: application.paymentAmount
             }
         });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error submitting application',
-            error: error.message
-        });
+        console.error('Confirm hiring error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-// Get application status
-export const getApplicationStatus = async (req, res) => {
-    try {
-        const { applicationId } = req.params;
-        const { email } = req.query;
+// Send HR notification when candidate confirms
+const sendHRNotificationEmail = async (application) => {
+    const subject = `Candidate Confirmed: ${application.fullName} - ${application.jobId.title}`;
 
-        const application = await Application.findById(applicationId)
-            .populate('jobId', 'jobTitle department')
-            .select('status createdAt reviewDate hrComments isHired paymentCompleted employeeCreated');
+    const emailContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #28a745;">Candidate Confirmation Received</h2>
+            <p>Good news! The candidate has confirmed their acceptance for the hiring offer.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3>Candidate Details:</h3>
+                <p><strong>Name:</strong> ${application.fullName}</p>
+                <p><strong>Email:</strong> ${application.email}</p>
+                <p><strong>Position:</strong> ${application.jobId.title}</p>
+                <p><strong>Confirmation Date:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            
+            <p><strong>Next Step:</strong> The candidate has been sent payment instructions. Once payment is submitted, you can verify it from the HR dashboard.</p>
+            
+            <p>Best regards,<br>System Notification</p>
+        </div>
+    `;
+
+    await sendEmail({
+        to: process.env.HR_EMAIL || 'hr@company.com',
+        subject,
+        html: emailContent
+    });
+
+    // Update email tracking
+    application.emailsTracking.hrConfirmationEmail = {
+        sent: true,
+        sentDate: new Date()
+    };
+    application.totalEmailsSent += 1;
+    await application.save();
+};
+
+// Send payment request email to candidate
+const sendPaymentRequestEmail = async (application) => {
+    const paymentUrl = `${process.env.CLIENT_URL}/applications/${application._id}/payment-details/${application.paymentToken}`;
+
+    const subject = 'Payment Required to Complete Your Hiring Process';
+
+    const emailContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #007bff;">Complete Your Hiring Process</h2>
+            <p>Dear ${application.fullName},</p>
+            <p>Thank you for confirming your acceptance! To complete your hiring process, a processing fee is required.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3>Payment Details:</h3>
+                <p><strong>Amount:</strong> ₹${application.paymentAmount}</p>
+                <p><strong>Purpose:</strong> Hiring Processing Fee</p>
+                <p><strong>Position:</strong> ${application.jobId.title}</p>
+            </div>
+            
+            <p>Click the button below to proceed with payment:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${paymentUrl}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    PROCEED TO PAYMENT
+                </a>
+            </div>
+            
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <p><strong>Important:</strong></p>
+                <ul>
+                    <li>This payment link is valid for 48 hours</li>
+                    <li>You will need to provide a transaction ID after payment</li>
+                    <li>HR will verify your payment before final confirmation</li>
+                    <li>This is a one-time processing fee</li>
+                </ul>
+            </div>
+            
+            <p>If you have any questions about the payment process, please contact our HR team.</p>
+            
+            <p>Best regards,<br>HR Team</p>
+        </div>
+    `;
+
+    await sendEmail({
+        to: application.email,
+        subject,
+        html: emailContent
+    });
+
+    // Update email tracking
+    application.emailsTracking.paymentRequestEmail = {
+        sent: true,
+        sentDate: new Date()
+    };
+    application.totalEmailsSent += 1;
+    await application.save();
+};
+
+// Get application details for payment page
+export const getApplicationDetails = async (req, res) => {
+    try {
+        const { applicationId, token } = req.params;
+
+        const application = await Application.findOne({
+            _id: applicationId,
+            paymentToken: token,
+            candidateConfirmed: true
+        }).populate('jobId', 'title department salaryRange location');
 
         if (!application) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
+            return res.status(404).json({ 
+                message: 'Invalid payment link or application not found' 
             });
         }
 
-        // Verify email for security
-        if (application.email !== email.toLowerCase()) {
-            return res.status(403).json({
-                success: false,
-                message: 'Unauthorized access'
+        // Check if payment already completed
+        if (application.paymentCompleted) {
+            return res.status(200).json({
+                message: 'Payment already completed',
+                status: 'payment_completed',
+                application: {
+                    fullName: application.fullName,
+                    email: application.email,
+                    jobTitle: application.jobId.title,
+                    paymentAmount: application.paymentAmount,
+                    paymentDate: application.paymentDate,
+                    transactionId: application.paymentTransactionId
+                }
             });
         }
 
         res.status(200).json({
-            success: true,
-            data: application
+            message: 'Application details retrieved successfully',
+            application: {
+                id: application._id,
+                fullName: application.fullName,
+                email: application.email,
+                phone: application.phone,
+                jobDetails: {
+                    title: application.jobId.title,
+                    department: application.jobId.department,
+                    salaryRange: application.jobId.salaryRange,
+                    location: application.jobId.location
+                },
+                paymentRequired: application.paymentRequired,
+                paymentAmount: application.paymentAmount,
+                expectedSalary: application.expectedSalary
+            }
         });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching application status',
-            error: error.message
-        });
+        console.error('Get application details error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-// Complete payment for hired candidates
-export const completePayment = async (req, res) => {
+// Submit payment details by candidate
+export const submitPaymentDetails = async (req, res) => {
     try {
-        const { applicationId } = req.params;
-        const { transactionId, paymentMethod, amount } = req.body;
+        const { applicationId, token } = req.params;
+        const { transactionId, paymentMethod, paymentDate, paymentScreenshot } = req.body;
 
-        const application = await Application.findById(applicationId);
-
-        if (!application) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
+        if (!transactionId || !paymentMethod) {
+            return res.status(400).json({
+                message: 'Transaction ID and payment method are required'
             });
         }
 
-        if (!application.isHired) {
-            return res.status(400).json({
-                success: false,
-                message: 'Application is not in hired status'
+        const application = await Application.findOne({
+            _id: applicationId,
+            paymentToken: token,
+            candidateConfirmed: true
+        });
+
+        if (!application) {
+            return res.status(404).json({
+                message: 'Invalid payment link or application not found' 
             });
         }
 
         if (application.paymentCompleted) {
-            return res.status(400).json({
-                success: false,
-                message: 'Payment already completed'
+            return res.status(400).json({ 
+                message: 'Payment already submitted for this application' 
             });
         }
 
-        // Validate payment amount
-        if (amount !== 1000) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid payment amount. Required: ₹1000'
-            });
-        }
-
-        // In a real application, you would integrate with a payment gateway here
-        // For now, we'll just simulate payment processing
-
-        // Generate a simple transaction ID if not provided
-        const finalTransactionId = transactionId || `TXN${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
-
-        // Update application with payment details
+        // Update payment details
+        application.paymentTransactionId = transactionId;
         application.paymentCompleted = true;
-        application.paymentTransactionId = finalTransactionId;
-        application.paymentDate = new Date();
+        application.paymentDate = paymentDate || new Date();
+        application.status = 'payment_submitted';
+
+        // Store additional payment info
+        application.paymentDetails = {
+            method: paymentMethod,
+            screenshot: paymentScreenshot || null,
+            submittedDate: new Date()
+        };
 
         await application.save();
 
+        // Send confirmation email to candidate
+        await sendPaymentSubmissionConfirmation(application);
+
+        // Notify HR about payment submission
+        await sendHRPaymentNotification(application);
+
         res.status(200).json({
-            success: true,
-            message: 'Payment completed successfully',
-            data: {
-                transactionId: finalTransactionId,
-                amount: 1000,
-                paymentDate: application.paymentDate
-            }
+            message: 'Payment details submitted successfully! HR will verify your payment shortly.',
+            status: 'payment_submitted',
+            transactionId: transactionId,
+            nextStep: 'awaiting_verification'
         });
     } catch (error) {
+        console.error('Submit payment details error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// Send payment submission confirmation to candidate
+const sendPaymentSubmissionConfirmation = async (application) => {
+    const subject = 'Payment Received - Under Verification';
+
+    const emailContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #28a745;">Payment Submission Confirmed</h2>
+            <p>Dear ${application.fullName},</p>
+            <p>We have received your payment details for the hiring process.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3>Payment Details:</h3>
+                <p><strong>Transaction ID:</strong> ${application.paymentTransactionId}</p>
+                <p><strong>Amount:</strong> ₹${application.paymentAmount}</p>
+                <p><strong>Submission Date:</strong> ${new Date().toLocaleDateString()}</p>
+                <p><strong>Status:</strong> Under Verification</p>
+            </div>
+            
+            <div style="background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #bee5eb;">
+                <p><strong>What's Next?</strong></p>
+                <p>Our HR team will verify your payment within 24-48 hours. You will receive an email confirmation once verification is complete.</p>
+            </div>
+            
+            <p>Thank you for your patience!</p>
+            <p>Best regards,<br>HR Team</p>
+        </div>
+    `;
+
+    await sendEmail({
+        to: application.email,
+        subject,
+        html: emailContent
+    });
+};
+
+// Send HR notification about payment submission
+const sendHRPaymentNotification = async (application) => {
+    const subject = `Payment Submitted: ${application.fullName} - Verification Required`;
+
+    const emailContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #ffc107;">Payment Verification Required</h2>
+            <p>A candidate has submitted payment details that require verification.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <h3>Candidate & Payment Details:</h3>
+                <p><strong>Name:</strong> ${application.fullName}</p>
+                <p><strong>Email:</strong> ${application.email}</p>
+                <p><strong>Position:</strong> ${application.jobId?.title || 'N/A'}</p>
+                <p><strong>Transaction ID:</strong> ${application.paymentTransactionId}</p>
+                <p><strong>Amount:</strong> ₹${application.paymentAmount}</p>
+                <p><strong>Payment Method:</strong> ${application.paymentDetails?.method || 'N/A'}</p>
+                <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.CLIENT_URL}/hr/applications/${application._id}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    VERIFY PAYMENT
+                </a>
+            </div>
+            
+            <p><strong>Action Required:</strong> Please verify this payment in the HR dashboard and update the application status accordingly.</p>
+
+            <p>Best regards,<br>System Notification</p>
+        </div>
+    `;
+
+    await sendEmail({
+        to: process.env.HR_EMAIL || 'hr@company.com',
+        subject,
+        html: emailContent
+    });
+};
+
+const getDetailedStatusInfo = (application) => {
+    let info = {};
+    switch (application.status) {
+        case 'pending':
+            info = { stage: "Pending", description: "Your application has been received and is awaiting review." };
+            break;
+        case 'under_review':
+            info = { stage: "Under Review", description: "HR is currently reviewing your application." };
+            break;
+        case 'shortlisted':
+            info = { stage: "Shortlisted", description: "You have been shortlisted for the next round." };
+            break;
+        case 'interview_scheduled':
+            info = { stage: "Interview Scheduled", description: "Your interview has been scheduled. Please check your email for details." };
+            break;
+        case 'hired':
+            info = { stage: "Hired", description: "Congratulations! You have been hired." };
+            break;
+        case 'rejected':
+            info = { stage: "Rejected", description: "Unfortunately, your application was not selected." };
+            break;
+        case 'candidate_confirmed':
+            info = { stage: "Candidate Confirmed", description: "You have confirmed your interest in the role." };
+            break;
+        case 'payment_pending':
+            info = { stage: "Payment Pending", description: "Payment is required to proceed." };
+            break;
+        case 'payment_submitted':
+            info = { stage: "Payment Submitted", description: "Your payment has been submitted. Awaiting verification." };
+            break;
+        case 'payment_verified':
+            info = { stage: "Payment Verified", description: "Your payment has been verified." };
+            break;
+        case 'employee_created':
+            info = { stage: "Employee Created", description: "Your employee profile has been created in the system." };
+            break;
+        default:
+            info = { stage: "Unknown", description: "Application status is not recognized." };
+    }
+    return info;
+};
+
+
+
+export const getActiveJobs = async (req, res) => {
+    try {
+        const jobs = await Job.find({
+            status: 'active',
+            applicationDeadline: { $gte: new Date() }
+        }).select('-createdBy -updatedBy');
+
+        res.status(200).json({
+            message: 'Active jobs retrieved successfully',
+            data: jobs
+        });
+    } catch (error) {
+        console.error('Get active jobs error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+export const getJobDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const job = await Job.findById(id).select('-createdBy -updatedBy');
+
+        if (!job) {
+            return res.status(404).json({ message: 'Job not found' });
+        }
+
+        res.status(200).json({
+            message: 'Job details retrieved successfully',
+            data: job
+        });
+    } catch (error) {
+        console.error('Get job details error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+export const submitApplication = async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const applicationData = req.body;
+
+        // Check if job exists and is active
+        const job = await Job.findOne({ _id: jobId, status: 'active' });
+        if (!job) {
+            return res.status(404).json({ message: 'Job not found or not active' });
+        }
+
+        // Check for duplicate application
+        const existingApplication = await Application.findOne({
+            jobId: jobId,
+            email: applicationData.email.toLowerCase()
+        });
+
+        if (existingApplication) {
+            return res.status(400).json({
+                message: 'You have already applied for this position'
+            });
+        }
+
+        // Create new application
+        const application = new Application({
+            ...applicationData,
+            jobId: jobId,
+            email: applicationData.email.toLowerCase()
+        });
+
+        await application.save();
+
+        res.status(201).json({
+            message: 'Application submitted successfully',
+            applicationId: application._id,
+            status: application.status
+        });
+    } catch (error) {
+        console.error('Submit application error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+export const myApplication = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // ✅ Use find, not findOne
+        const applications = await Application.find({ email: email.toLowerCase() })
+            .populate("jobId", "title department location")
+            .select("-candidateConfirmationToken -paymentToken");
+
+        if (!applications || applications.length === 0) {
+            return res.status(404).json({ message: "No applications found for this email" });
+        }
+
+        // ✅ Map over all applications
+        const formattedApplications = applications.map(app => ({
+            id: app._id,
+            fullName: app.fullName,
+            email: app.email,
+            jobTitle: app.jobId?.title,
+            department: app.jobId?.department,
+            location: app.jobId?.location,
+            status: app.status,
+            statusInfo: getDetailedStatusInfo(app), // dynamic status details
+            appliedDate: app.createdAt,
+            lastUpdated: app.updatedAt,
+            isHired: app.isHired,
+            candidateConfirmed: app.candidateConfirmed,
+            paymentRequired: app.paymentRequired,
+            paymentCompleted: app.paymentCompleted,
+            paymentVerified: app.paymentVerified,
+            employeeCreated: app.employeeCreated
+        }));
+
+        // ✅ Return all applications in array
+        res.status(200).json({
+            message: "Applications retrieved successfully",
+            count: formattedApplications.length,
+            applications: formattedApplications
+        });
+
+    } catch (error) {
+        console.error("Error fetching applications:", error);
         res.status(500).json({
-            success: false,
-            message: 'Error processing payment',
+            message: "Server error",
             error: error.message
         });
     }
 };
 
-// Setup employee account after payment completion
+
+// Legacy functions (keep for backward compatibility)
+export const completePayment = async (req, res) => {
+    // Redirect to new payment flow
+    return res.status(301).json({
+        message: 'This endpoint has been moved. Please use the payment link sent to your email.',
+        newEndpoint: `/applications/${req.params.applicationId}/payment-details/{token}`
+    });
+};
+
 export const setupEmployeeAccount = async (req, res) => {
-    try {
-        const { applicationId } = req.params;
-        const { email, password } = req.body;
-
-        const application = await Application.findById(applicationId)
-            .populate('jobId');
-
-        if (!application) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        if (!application.paymentCompleted) {
-            return res.status(400).json({
-                success: false,
-                message: 'Payment not completed yet'
-            });
-        }
-
-        if (application.employeeCreated) {
-            return res.status(400).json({
-                success: false,
-                message: 'Employee account already created'
-            });
-        }
-
-        // Validate email matches application
-        if (application.email !== email.toLowerCase()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email does not match application'
-            });
-        }
-
-        // Validate password strength
-        if (password.length < 8) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password must be at least 8 characters long'
-            });
-        }
-
-        // Generate employee code
-        const employeeCount = await User.countDocuments();
-        const employeeCode = `EMP${String(employeeCount + 1).padStart(3, '0')}`;
-
-        // Generate username from full name
-        const username = application.fullName
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '.')
-            .replace(/\.+/g, '.')
-            .replace(/^\.|\.$/g, '');
-
-        // Check if username already exists, if so append number
-        let finalUsername = username;
-        let counter = 1;
-        while (await User.findOne({ username: finalUsername })) {
-            finalUsername = `${username}${counter}`;
-            counter++;
-        }
-
-        // Create new employee user
-        const newEmployee = new User({
-            employeeCode,
-            username: finalUsername,
-            password, // Will be hashed by pre-save middleware
-            role: 'employee',
-            department: application.jobId.department,
-            email: application.email,
-            contact: application.phone,
-            Salary: application.expectedSalary,
-            createdBy: 'HR_SYSTEM'
-        });
-
-        await newEmployee.save();
-
-        // Update application
-        application.employeeCreated = true;
-        application.employeeId = newEmployee._id;
-        await application.save();
-
-        res.status(201).json({
-            success: true,
-            message: 'Employee account created successfully',
-            data: {
-                employeeCode,
-                username: finalUsername,
-                email: application.email,
-                department: application.jobId.department
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error creating employee account',
-            error: error.message
-        });
-    }
+    // This is now handled automatically after payment verification
+    return res.status(410).json({
+        message: 'This endpoint is no longer used. Employee accounts are created automatically after payment verification.'
+    });
 };

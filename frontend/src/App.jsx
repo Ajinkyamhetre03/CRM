@@ -24,6 +24,9 @@ import PortfolioPage from './components/Pages/public/PortfolioPage'
 import ResourcesPage from './components/Pages/public/ResourcesPage'
 import CareersPage from './components/Pages/public/CareersPage'
 
+
+import ConfirmHiring from './components/Pages/Candidate/ConfirmHiring.jsx'
+
 // SuperAdmin Pages
 import AllUsers from './components/Pages/SuperAdmin/AllUsers';
 import SystemSettings from './components/Pages/SuperAdmin/SystemSettings';
@@ -197,6 +200,7 @@ function App() {
           <Route path="contact" element={<ContactPage />} />
           <Route path="careers" element={<CareersPage />} />
         </Route>
+        <Route path="/applications/:applicationId/confirm-hiring/:token" element={<ConfirmHiring />} />
 
 
         <Route path="/login" element={

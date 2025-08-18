@@ -14,10 +14,10 @@ import {
     Search,
     Eye,
     Plus,
-    Trash2
+    Trash2, Mail, Clock, CheckCircle, XCircle, AlertCircle
 } from "lucide-react";
 
-const base_Url = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+const base_Url = import.meta.env.VITE_BASE_URL;
 
 // Application Form Modal
 const JobApplicationModal = ({ job, onClose, onSubmit, isSubmitting }) => {
@@ -717,6 +717,11 @@ const CareersPage = () => {
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [showApplicationForm, setShowApplicationForm] = useState(false);
     const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+    const [showTrackModal, setShowTrackModal] = useState(false);
+    const [trackEmail, setTrackEmail] = useState("");
+    const [applications, setApplications] = useState([]);
+    const [isTrackingLoading, setIsTrackingLoading] = useState(false);
+    const [showApplicationsModal, setShowApplicationsModal] = useState(false);
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState("");
@@ -872,6 +877,79 @@ const CareersPage = () => {
         );
     };
 
+    const trackApplications = async (email) => {
+        setIsTrackingLoading(true);
+        try {
+            const res = await axios.post(
+                `${base_Url}/api/candidate/applications/myapplication`,
+                { email },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                }
+            );
+
+            setApplications(res.data.applications || []);
+            setShowTrackModal(false);
+            setShowApplicationsModal(true);
+            setTrackEmail("");
+
+            if (res.data.applications.length === 0) {
+                toast.info("No applications found for this email address");
+            }
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || "Failed to fetch applications";
+            toast.error(errorMessage);
+            setApplications([]);
+        } finally {
+            setIsTrackingLoading(false);
+        }
+    };
+
+    const handleTrackSubmit = (e) => {
+        e.preventDefault();
+        if (trackEmail.trim()) {
+            trackApplications(trackEmail.trim());
+        }
+    };
+
+    const closeTrackingModals = () => {
+        setShowTrackModal(false);
+        setShowApplicationsModal(false);
+        setTrackEmail("");
+        setApplications([]);
+    };
+
+    const getStatusColor = (status) => {
+        switch (status.toLowerCase()) {
+            case 'hired':
+                return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+            case 'rejected':
+                return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+            case 'interview':
+                return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+            case 'pending':
+            default:
+                return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        }
+    };
+
+    const getStatusIcon = (status) => {
+        switch (status.toLowerCase()) {
+            case 'hired':
+                return <CheckCircle className="h-4 w-4" />;
+            case 'rejected':
+                return <XCircle className="h-4 w-4" />;
+            case 'interview':
+                return <AlertCircle className="h-4 w-4" />;
+            case 'pending':
+            default:
+                return <Clock className="h-4 w-4" />;
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 pb-24">
             {/* Header */}
@@ -880,9 +958,20 @@ const CareersPage = () => {
                     <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-center">
                         Explore & Apply to Open Roles
                     </h1>
-                    <p className="text-blue-100 text-center text-lg max-w-2xl mx-auto">
+                    <p className="text-blue-100 text-center text-lg max-w-2xl mx-auto mb-6">
                         Find your next career opportunity with us
                     </p>
+
+                    {/* Track Applications Button */}
+                    <div className="flex justify-center">
+                        <button
+                            onClick={() => setShowTrackModal(true)}
+                            className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg font-medium transition-all backdrop-blur-sm"
+                        >
+                            <Mail className="h-5 w-5" />
+                            Track My Applications
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1140,6 +1229,190 @@ const CareersPage = () => {
                     </div>
                 )}
             </div>
+            {showTrackModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="relative bg-white dark:bg-gray-900 backdrop-blur-lg border text-gray-800 dark:text-gray-300 border-white/20 rounded-2xl shadow-xl w-full max-w-md">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-xl font-bold">Track Your Applications</h2>
+                            <button
+                                onClick={closeTrackingModals}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleTrackSubmit} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">
+                                    Enter your email address to track applications
+                                </label>
+                                <input
+                                    type="email"
+                                    value={trackEmail}
+                                    onChange={(e) => setTrackEmail(e.target.value)}
+                                    placeholder="your.email@example.com"
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={closeTrackingModals}
+                                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                                    disabled={isTrackingLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isTrackingLoading}
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isTrackingLoading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Tracking...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Mail className="h-4 w-4" />
+                                            Track Applications
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showApplicationsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="relative bg-white dark:bg-gray-900 backdrop-blur-lg border text-gray-800 dark:text-gray-300 border-white/20 rounded-2xl shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                            <div>
+                                <h2 className="text-2xl font-bold">My Applications</h2>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    Found {applications.length} application{applications.length !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeTrackingModals}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {applications.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Mail className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                                    <h3 className="text-lg font-medium mb-2">No Applications Found</h3>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                        No applications were found for the provided email address.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {applications.map((app, index) => (
+                                        <div
+                                            key={app.id || index}
+                                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4"
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <h3 className="text-lg font-semibold mb-2">{app.fullName}</h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">Department:</span>
+                                                            <span className="ml-2 font-medium">{app.department?.toUpperCase()}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                                                            <span className="ml-2">{app.email}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">Applied Date:</span>
+                                                            <span className="ml-2">
+                                                                {new Date(app.appliedDate).toLocaleDateString("en-IN", {
+                                                                    day: "numeric",
+                                                                    month: "short",
+                                                                    year: "numeric"
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-600 dark:text-gray-400">Last Updated:</span>
+                                                            <span className="ml-2">
+                                                                {new Date(app.lastUpdated).toLocaleDateString("en-IN", {
+                                                                    day: "numeric",
+                                                                    month: "short",
+                                                                    year: "numeric"
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(app.status)}`}>
+                                                        {getStatusIcon(app.status)}
+                                                        {app.statusInfo?.stage || app.status}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {app.statusInfo?.description && (
+                                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                                                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                                                        <strong>Status Update:</strong> {app.statusInfo.description}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Additional status indicators */}
+                                            {app.status === 'hired' && (
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                                    <div className={`flex items-center gap-1 ${app.candidateConfirmed ? 'text-green-600' : 'text-gray-400'}`}>
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        <span>Confirmed</span>
+                                                    </div>
+                                                    <div className={`flex items-center gap-1 ${app.paymentRequired ? 'text-blue-600' : 'text-gray-400'}`}>
+                                                        <AlertCircle className="h-3 w-3" />
+                                                        <span>Payment Req.</span>
+                                                    </div>
+                                                    <div className={`flex items-center gap-1 ${app.paymentCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        <span>Payment Done</span>
+                                                    </div>
+                                                    <div className={`flex items-center gap-1 ${app.employeeCreated ? 'text-green-600' : 'text-gray-400'}`}>
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        <span>Employee Created</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200 dark:border-gray-700">
+                            <button
+                                onClick={closeTrackingModals}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

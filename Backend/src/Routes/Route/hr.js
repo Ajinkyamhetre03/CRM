@@ -1,4 +1,4 @@
-// routes/hr.js
+// routes/hr.js - Updated HR Routes
 import express from 'express';
 import {
     createJob,
@@ -8,22 +8,24 @@ import {
     deleteJob,
     getAllApplications,
     getApplicationById,
-    updateApplicationStatus,
+    updateApplicationStatus, // Enhanced with email triggers
     sendHiringEmail,
     processPayment,
     createEmployee,
     getApplicationsByJob,
-    getDashboardStats
+    getDashboardStats,
+    // New functions
+    getCandidateConfirmations,
+    verifyPayment,
+    getEmailTrackingStats
 } from '../Controllers/Hr/hrController.js';
 
 import { auth } from '../../middleware/auth.js'
 import { checkRoleAndDepartment } from '../../middleware/roleCheck.js'
 const router = express.Router();
 
-// auth checker 
+// Auth and role checkers
 router.use(auth)
-
-// Role checker 
 router.use(checkRoleAndDepartment(["manager", "employee", "intern"], ["HR"]));
 
 // Job Management Routes
@@ -37,15 +39,22 @@ router.get('/jobs/:jobId/applications', getApplicationsByJob);
 // Application Management Routes
 router.get('/applications', getAllApplications);
 router.get('/applications/:id', getApplicationById);
+
+// Enhanced status update - automatically triggers hire/reject emails
 router.put('/applications/:id/status', updateApplicationStatus);
 
-// Hiring Process Routes
-router.post('/applications/:id/hire', sendHiringEmail);
-router.post('/applications/:id/reject', sendHiringEmail);
-router.post('/applications/:id/payment', processPayment);
+// Candidate Confirmation Management
+router.get('/candidate-confirmations', getCandidateConfirmations);
+
+// Payment Verification
+router.post('/applications/:id/verify-payment', verifyPayment);
+
+// Final Employee Creation
 router.post('/applications/:id/create-employee', createEmployee);
 
-// Dashboard and Statistics
+// Email and Statistics
+router.get('/email-stats', getEmailTrackingStats);
 router.get('/dashboard/stats', getDashboardStats);
 
 export default router;
+
