@@ -1,0 +1,3 @@
+* //when user submit Application without enter any data that crash the server 
+// chat notification ws error 
+// server crush due to so much request
