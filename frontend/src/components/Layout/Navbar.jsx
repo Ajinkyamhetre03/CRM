@@ -141,13 +141,7 @@ const Navbar = ({ setSidebarOpen }) => {
             </div>
 
             {/* Desktop Logout */}
-            <button
-              onClick={logout}
-              className="hidden sm:flex text-gray-600 dark:text-gray-300 bg-gray-700 hover:bg-gray-900 px-3 py-1 rounded-md hover:text-red-600 dark:hover:text-red-400 items-center"
-              title="Logout"
-            >
-              <LogOut className="h-5 w-5 mr-1" /> Logout
-            </button>
+            
           </div>
         </div>
       </header>

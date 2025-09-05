@@ -18,6 +18,7 @@ import Employee from "./src/Routes/Route/Employee.js";
 import Intern from "./src/Routes/Route/Intern.js";
 import Chat from "./src/Routes/Route/Chat.js";
 import userRoutes from './src/Routes/Route/DemoUSer.js';
+import Attendance from './src/Routes/Route/Attendance.js'
 
 // import socket handler
 import { socketHandler } from "./socket.js";
@@ -28,7 +29,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3005",
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
@@ -58,17 +59,21 @@ app.use('/api/candidate', Candidate);
 app.use('/api/manager', Manager);
 app.use('/api/employee', Employee);
 app.use('/api/intern', Intern);
-app.use('/api/chat', Chat);
+app.use('/api/attendance', Attendance);
 
 if (process.env.DEVELOPMENT === "true") {
   app.use('/api', userRoutes);
+}
+if (process.env.CHAT === "true") {
+  app.use('/api/chat', Chat);
+  // setup socket
+   socketHandler(io);
 }
 
 // 404 handler
 app.use((req, res) => res.status(404).send("Route not found"));
 
-// setup socket
-socketHandler(io);
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

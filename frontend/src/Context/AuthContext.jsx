@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const AuthContext = createContext({
   user: null,
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const base_Url = import.meta.env.VITE_BASE_URL;
 
   // Check if user is authenticated on mount
   useEffect(() => {
@@ -50,19 +52,69 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = (userData, tokenValue) => {
-    setUser(userData);
-    setToken(tokenValue);
-    setIsAuthenticated(true);
-   
-    // Store in localStorage for persistence
-    localStorage.setItem('auth_token', tokenValue);
-    localStorage.setItem('auth_user', JSON.stringify(userData));
+const login = async (userData, tokenValue) => {
+  setUser(userData);
+  setToken(tokenValue);
+  setIsAuthenticated(true);
+
+  // Store in localStorage for persistence
+  localStorage.setItem('auth_token', tokenValue);
+  localStorage.setItem('auth_user', JSON.stringify(userData));
+
+  try {
+    // Call check-in API
+    const checkinRes = await axios.post(
+      `${base_Url}/api/attendance/checkin`,
+      {}, // no body
+      {
+        headers: {
+          Authorization: `Bearer ${tokenValue}`,
+        },
+      }
+    );
+
     
-    navigate("/app/dashboard");
+  } catch (err) {
+    //toast.error(err.response?.data?.message || "You are all ready Check-in or Check-in failed! ");
+  }
+
+  // Navigate after check-in
+  navigate("/app/dashboard");
+};
+
+
+  // Handle checkout API call
+  const handleCheckout = async (userToken) => {
+    try {
+      const checkoutRes = await axios.post(
+        `${base_Url}/api/attendance/checkout`,
+        {}, // no body
+        {
+          headers: {
+            Authorization: `Bearer ${userToken}`
+          }
+        }
+      );
+      console.log('Checkout response:', checkoutRes.data);
+     
+      return true;
+    } catch (err) {
+      console.error('Checkout error:', err);
+      // Don't block logout if checkout fails, just show warning
+      // toast.warn(err.response?.data?.message || 'Checkout failed, but logout will continue');
+      return false;
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const currentToken = token;
+    
+    // Call checkout API before clearing the token
+    if (currentToken && isAuthenticated) {
+      await handleCheckout(currentToken);
+    }
+    
+    // Clear state and localStorage
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);

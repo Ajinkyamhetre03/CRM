@@ -2,12 +2,14 @@ import {
   Home, Users, Settings, BarChart3, FileText, Calendar,
   Shield, DollarSign, Package, UserCheck, Clock, Award,
   Cpu, Code, TrendingUp, Briefcase, UserPlus, Database,
-  Monitor, Wrench, Calculator, PieChart, Target, Building ,ShieldCheck ,Mails, NotebookPen,
+  Monitor, Wrench, Calculator, PieChart, Target, Building ,ShieldCheck ,Mails, NotebookPen,MessageCircleMore
 } from 'lucide-react';
 
 export const navigationConfig = {
   superadmin: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'All Users', path: '/app/users', icon: Users },
     { name: 'Analytics', path: '/app/analytics', icon: BarChart3 },
     { name: 'Email', path: '/app/mail', icon: Mails },
@@ -17,6 +19,8 @@ export const navigationConfig = {
   ],
   admin: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'User Management', path: '/app/user-management', icon: Users },
     { name: 'Department Reports', path: '/app/department-reports', icon: BarChart3 },
     { name: 'Settings', path: '/app/settings', icon: Settings },
@@ -25,6 +29,8 @@ export const navigationConfig = {
   ],
   ceo: [
     { name: 'Executive Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Company Overview', path: '/app/company-overview', icon: BarChart3 },
     { name: 'Financial Reports', path: '/app/financial-reports', icon: DollarSign },
     { name: 'Strategic Planning', path: '/app/strategic-planning', icon: Package },
@@ -37,6 +43,8 @@ export const navigationConfig = {
 export const managerNavigationConfig = {
   hr: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Job Management', path: '/app/hr/jobs', icon: FileText },
     { name: 'Application Management', path: '/app/hr/application', icon: UserPlus },
     { name: 'Payment Verification', path: '/app/hr/payment-verification', icon: ShieldCheck },
@@ -51,6 +59,8 @@ export const managerNavigationConfig = {
   ],
   iot: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/iot/managertasks', icon: FileText },
     { name: 'IoT Team', path: '/app/iot/team-management', icon: Users },
     { name: 'Device Management', path: '/app/iot/devices', icon: Cpu },
@@ -62,6 +72,8 @@ export const managerNavigationConfig = {
   ],
   software: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/software/managertasks', icon: FileText },
     { name: 'Dev Team', path: '/app/software/team-management', icon: Users },
     { name: 'Projects', path: '/app/software/projects', icon: Code },
@@ -73,6 +85,8 @@ export const managerNavigationConfig = {
   ],
   financial: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/financial/managertasks', icon: FileText },
     { name: 'Finance Team', path: '/app/financial/team-management', icon: Users },
     { name: 'Budget Planning', path: '/app/financial/budgets', icon: Calculator },
@@ -84,6 +98,8 @@ export const managerNavigationConfig = {
   ],
   business: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
+    { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/business/managertasks', icon: FileText },
     { name: 'Business Team', path: '/app/business/team-management', icon: Users },
     { name: 'Client Relations', path: '/app/business/clients', icon: Briefcase },
@@ -99,6 +115,7 @@ export const managerNavigationConfig = {
 export const employeeNavigationConfig = {
   hr: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/hr/employeetasks', icon: FileText },
     { name: 'Employee Database', path: '/app/hr/employee-database', icon: Database },
@@ -109,6 +126,7 @@ export const employeeNavigationConfig = {
   ],
   iot: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/iot/employeetasks', icon: FileText },
     { name: 'Device Testing', path: '/app/iot/testing', icon: Cpu },
@@ -119,6 +137,7 @@ export const employeeNavigationConfig = {
   ],
   software: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/software/employeetasks', icon: FileText },
     { name: 'Development Tasks', path: '/app/software/tasks', icon: Code },
@@ -130,6 +149,7 @@ export const employeeNavigationConfig = {
   ],
   financial: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
      { name: 'Assigned Tasks', path: '/app/financial/employeetasks', icon: FileText },
     { name: 'Financial Tasks', path: '/app/financial/tasks', icon: Calculator },
@@ -141,6 +161,7 @@ export const employeeNavigationConfig = {
   ],
   business: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
      { name: 'Assigned Tasks', path: '/app/business/employeetasks', icon: FileText },
     { name: 'Business Tasks', path: '/app/business/tasks', icon: Briefcase },
@@ -156,6 +177,7 @@ export const employeeNavigationConfig = {
 export const internNavigationConfig = {
   hr: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/hr/interntasks', icon: FileText },
     { name: 'HR Learning', path: '/app/hr/learning', icon: Award },
@@ -166,6 +188,7 @@ export const internNavigationConfig = {
   ],
   iot: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/iot/interntasks', icon: FileText },
     { name: 'IoT Learning', path: '/app/iot/learning', icon: Award },
@@ -176,6 +199,7 @@ export const internNavigationConfig = {
   ],
   software: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/software/interntasks', icon: FileText },
     { name: 'Coding Tasks', path: '/app/software/assigned-tasks', icon: Code },
@@ -187,6 +211,7 @@ export const internNavigationConfig = {
   ],
   financial: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
      { name: 'Assigned Tasks', path: '/app/financial/interntasks', icon: FileText },
     { name: 'Finance Learning', path: '/app/financial/learning', icon: Award },
@@ -198,6 +223,7 @@ export const internNavigationConfig = {
   ],
   business: [
     { name: 'Dashboard', path: '/app/dashboard', icon: Home },
+    { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/business/interntasks', icon: FileText },
     { name: 'Business Learning', path: '/app/business/learning', icon: Award },

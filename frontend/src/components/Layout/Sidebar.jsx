@@ -9,7 +9,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
-  const userNavigation = getNavigationConfig(user);
+  // Only allow /app/chat if VITE_CHAT is enabled
+  const chatEnabled = import.meta.env.VITE_CHAT === 'true';
+  const userNavigation = getNavigationConfig(user).filter(
+    item => chatEnabled || item.path !== '/app/chat'
+  );
 
   const getDepartmentTitle = () => {
     if (!user?.department) return 'CRM';
