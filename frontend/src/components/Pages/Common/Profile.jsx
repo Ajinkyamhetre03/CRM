@@ -156,7 +156,7 @@ const Profile = () => {
     )
     const today = new Date()
     const isFuture = date > today
-    if (isFuture) return null
+    //if (isFuture) return null
 
     const dayData = calendarData[day]
     if (dayData) return dayData.status
@@ -201,8 +201,7 @@ const Profile = () => {
   const fetchMonthlyAttendance = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/attendance/search?month=${
-          currentMonth.getMonth() + 1
+        `http://localhost:5000/api/attendance/search?month=${currentMonth.getMonth() + 1
         }&year=${currentMonth.getFullYear()}`,
         {
           method: 'GET',
@@ -460,12 +459,12 @@ const Profile = () => {
     setShowDayModal(true)
   }
 
- const navigateMonth = (direction) => {
-  setCurrentMonth((prev) => {
-    const latestMonth = new Date(prev.getFullYear(), prev.getMonth() + direction, 1);
-    return latestMonth;
-  });
-};
+  const navigateMonth = (direction) => {
+    setCurrentMonth((prev) => {
+      const latestMonth = new Date(prev.getFullYear(), prev.getMonth() + direction, 1);
+      return latestMonth;
+    });
+  };
 
 
   const isToday = day => {
@@ -477,15 +476,7 @@ const Profile = () => {
     )
   }
 
-  const isFutureDate = day => {
-    const clickedDate = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
-      day
-    )
-    const today = new Date()
-    return clickedDate > today
-  }
+
 
   const isCheckedIn =
     todayAttendance &&
@@ -509,21 +500,19 @@ const Profile = () => {
             <nav className='flex space-x-8 px-8 pt-8'>
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'profile'
+                className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'profile'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
+                  }`}
               >
                 Profile
               </button>
               <button
                 onClick={() => setActiveTab('attendance')}
-                className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'attendance'
+                className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'attendance'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
+                  }`}
               >
                 Attendance
               </button>
@@ -694,7 +683,6 @@ const Profile = () => {
                         )
                       )}
                     </div>
-
                     {/* Calendar Days */}
                     <div className='grid grid-cols-7 gap-2'>
                       {generateCalendarDays().map((day, index) => {
@@ -706,9 +694,17 @@ const Profile = () => {
 
                         const dayStatus = getDayStatus(day)
                         const isCurrentDay = isToday(day)
-                        const isFuture = isFutureDate(day)
 
-                        // Days to disable
+                        // Check if date is in the future
+                        const dayDate = new Date(
+                          currentMonth.getFullYear(),
+                          currentMonth.getMonth(),
+                          day
+                        )
+                        const today = new Date()
+                        const isFuture = dayDate > today
+
+                        // Days to disable - includes future dates and certain statuses
                         const disabledStatuses = [
                           'absent',
                           'on-leave',
@@ -717,38 +713,32 @@ const Profile = () => {
                           'weekend',
                           'holiday'
                         ]
-                        const isDisabled =
-                          isFuture || disabledStatuses.includes(dayStatus)
+
+                        const isDisabled = isFuture || disabledStatuses.includes(dayStatus)
 
                         return (
                           <button
                             key={day}
                             onClick={() => handleDayClick(day)}
-                            className={`
-        aspect-square flex items-center justify-center rounded-md text-xs font-medium
-        transition-all duration-200
-        ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
-        ${
-          dayStatus
-            ? getStatusBgColor(dayStatus)
-            : 'bg-gray-100 dark:bg-gray-700'
-        }
-        ${
-          isDisabled
-            ? 'opacity-40 cursor-not-allowed'
-            : 'hover:scale-105 hover:shadow'
-        }
-      `}
                             disabled={isDisabled}
+                            className={`
+          aspect-square flex items-center justify-center rounded-md text-xs font-medium
+          transition-all duration-200
+          ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
+          ${getStatusBgColor(dayStatus)}
+          ${isDisabled
+                                ? 'cursor-not-allowed  hover:scale-100 hover:shadow-none'
+                                : 'hover:scale-105 hover:shadow cursor-pointer'
+                              }
+        `}
                           >
                             <span
-                              className={`${
-                                isCurrentDay
+                              className={`${isCurrentDay
                                   ? 'text-blue-600 font-bold'
-                                  : dayStatus
-                                  ? getStatusColor(dayStatus)
-                                  : 'text-gray-700 dark:text-gray-300'
-                              }`}
+                                  : isDisabled
+                                    ? 'text-gray-400'
+                                    : getStatusColor(dayStatus)
+                                }`}
                             >
                               {day}
                             </span>
@@ -838,17 +828,7 @@ const Profile = () => {
               </button>
             </div>
 
-            {isFutureDate(selectedDay) ? (
-              <div className='text-center py-8'>
-                <Calendar size={48} className='mx-auto text-gray-400 mb-4' />
-                <p className='text-gray-600 dark:text-gray-400 mb-2'>
-                  Future Date
-                </p>
-                <p className='text-sm text-gray-500 dark:text-gray-500'>
-                  Attendance data will be available after this date passes.
-                </p>
-              </div>
-            ) : selectedDayData ? (
+            {selectedDayData ? (
               <div className='space-y-4'>
                 {/* Status Overview */}
                 <div
@@ -890,13 +870,12 @@ const Profile = () => {
                                 Session {index + 1}
                               </span>
                               <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  session.status === 'active'
+                                className={`text-xs px-2 py-1 rounded-full ${session.status === 'active'
                                     ? 'bg-blue-100 text-blue-700'
                                     : session.status === 'closed'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-red-100 text-red-700'
+                                  }`}
                               >
                                 {session.status}
                               </span>
@@ -1010,11 +989,10 @@ const Profile = () => {
             </div>
             {message.text && (
               <div
-                className={`mb-4 p-3 rounded-lg text-sm ${
-                  message.type === 'success'
+                className={`mb-4 p-3 rounded-lg text-sm ${message.type === 'success'
                     ? 'bg-green-100 text-green-700 border border-green-200'
                     : 'bg-red-100 text-red-700 border border-red-200'
-                }`}
+                  }`}
               >
                 {message.text}
               </div>

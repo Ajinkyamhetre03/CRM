@@ -107,7 +107,7 @@ router.post("/checkout", async (req, res) => {
     } else if (attendance.totalHours >= 4) {
       attendance.status = "half-day";
     } else {
-      attendance.status = "half-day"; // or "absent" if <2h
+      attendance.status = "remote"; // or "absent" if <2h
     }
 
     await attendance.save();

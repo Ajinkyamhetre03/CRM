@@ -2,7 +2,7 @@ import {
   Home, Users, Settings, BarChart3, FileText, Calendar,
   Shield, DollarSign, Package, UserCheck, Clock, Award,
   Cpu, Code, TrendingUp, Briefcase, UserPlus, Database,
-  Monitor, Wrench, Calculator, PieChart, Target, Building ,ShieldCheck ,Mails, NotebookPen,MessageCircleMore
+  Monitor, Wrench, Calculator, PieChart, Target, Building ,ShieldCheck ,Mails, ClipboardClock ,MessageCircleMore
 } from 'lucide-react';
 
 export const navigationConfig = {
@@ -49,6 +49,7 @@ export const managerNavigationConfig = {
     { name: 'Application Management', path: '/app/hr/application', icon: UserPlus },
     { name: 'Payment Verification', path: '/app/hr/payment-verification', icon: ShieldCheck },
     { name: 'Assigned Tasks', path: '/app/hr/managertasks', icon: FileText },
+    { name: 'Attendance', path: '/app/attendance', icon:ClipboardClock  },
     { name: 'HR Team', path: '/app/hr/team-management', icon: Users },
     { name: 'Recruitment', path: '/app/hr/recruitment', icon: UserPlus },
     { name: 'Employee Relations', path: '/app/hr/employee-relations', icon: UserCheck },
@@ -62,6 +63,7 @@ export const managerNavigationConfig = {
     { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/iot/managertasks', icon: FileText },
+    { name: 'Attendance', path: '/app/attendance', icon:ClipboardClock  },
     { name: 'IoT Team', path: '/app/iot/team-management', icon: Users },
     { name: 'Device Management', path: '/app/iot/devices', icon: Cpu },
     { name: 'IoT Projects', path: '/app/iot/projects', icon: Package },
@@ -75,6 +77,7 @@ export const managerNavigationConfig = {
     { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/software/managertasks', icon: FileText },
+    { name: 'Attendance', path: '/app/attendance', icon:ClipboardClock  },
     { name: 'Dev Team', path: '/app/software/team-management', icon: Users },
     { name: 'Projects', path: '/app/software/projects', icon: Code },
     { name: 'Code Reviews', path: '/app/software/code-reviews', icon: FileText },
@@ -88,6 +91,7 @@ export const managerNavigationConfig = {
     { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/financial/managertasks', icon: FileText },
+    { name: 'Attendance', path: '/app/attendance', icon:ClipboardClock  },
     { name: 'Finance Team', path: '/app/financial/team-management', icon: Users },
     { name: 'Budget Planning', path: '/app/financial/budgets', icon: Calculator },
     { name: 'Expense Reports', path: '/app/financial/expenses', icon: DollarSign },
@@ -101,6 +105,7 @@ export const managerNavigationConfig = {
     { name: 'Chat', path: '/app/chat', icon: MessageCircleMore  },
     { name: 'My Profile', path: '/app/profile', icon: Users },
     { name: 'Assigned Tasks', path: '/app/business/managertasks', icon: FileText },
+    { name: 'Attendance', path: '/app/attendance', icon:ClipboardClock  },
     { name: 'Business Team', path: '/app/business/team-management', icon: Users },
     { name: 'Client Relations', path: '/app/business/clients', icon: Briefcase },
     { name: 'Sales Pipeline', path: '/app/business/sales', icon: TrendingUp },
