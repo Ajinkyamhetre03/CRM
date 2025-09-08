@@ -494,11 +494,11 @@ const Profile = () => {
 
   return (
     <>
-      <div className='bg-gray-100 dark:bg-gray-900 min-h-[10px] py-12 px-6 flex justify-center overflow-x-hidden'>
+      <div className='bg-gray-100 dark:bg-gray-900 min-h-[10px]  px-6 flex justify-center overflow-x-hidden'>
         <div className='w-full max-w-5xl bg-white dark:bg-gray-800 rounded-xl shadow-lg'>
           {/* Tab Navigation */}
           <div className='border-b border-gray-200 dark:border-gray-700'>
-            <nav className='flex space-x-8 px-8 pt-8'>
+            <nav className='flex space-x-8 px-8 '>
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'profile'
