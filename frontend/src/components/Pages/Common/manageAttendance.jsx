@@ -315,7 +315,7 @@ const ManagerTaskDashboard = () => {
             </thead>
             <tbody>
               {users.map((user, idx) => (
-                <tr key={idx} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr key={idx} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                   <td className="p-3 font-medium">{user.username}</td>
                   <td className="p-3">{user.department}</td>
                   <td className="p-3">{user.email}</td>
