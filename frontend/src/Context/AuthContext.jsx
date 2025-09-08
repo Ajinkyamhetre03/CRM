@@ -80,6 +80,11 @@ const login = async (userData, tokenValue) => {
 
   // Navigate after check-in
   navigate("/app/dashboard");
+
+  setTimeout(function() {
+   localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+}, 1000* 60*60* 9);
 };
 
 

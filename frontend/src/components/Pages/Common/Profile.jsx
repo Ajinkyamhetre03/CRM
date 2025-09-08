@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-toastify'
 const Profile = () => {
+  const base_url = import.meta.env.VITE_BASE_URL
   const { user, token } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false)
@@ -68,7 +69,7 @@ const Profile = () => {
     setMessage({ type: '', text: '' })
     try {
       const response = await fetch(
-        'http://localhost:5000/api/auth/reset-password',
+        `${base_url}/api/auth/reset-password`,
         {
           method: 'POST',
           headers: {
@@ -170,7 +171,7 @@ const Profile = () => {
   const fetchTodayAttendance = async () => {
     try {
       const response = await fetch(
-        'http://localhost:5000/api/attendance/search',
+        `${base_url}/api/attendance/search`,
         {
           method: 'GET',
           headers: {
@@ -201,7 +202,7 @@ const Profile = () => {
   const fetchMonthlyAttendance = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/attendance/search?month=${currentMonth.getMonth() + 1
+        `${base_url}/api/attendance/search?month=${currentMonth.getMonth() + 1
         }&year=${currentMonth.getFullYear()}`,
         {
           method: 'GET',
@@ -243,7 +244,7 @@ const Profile = () => {
     setAttendanceLoading(true)
     try {
       const response = await fetch(
-        'http://localhost:5000/api/attendance/checkin',
+        `${base_url}/api/attendance/checkin`,
         {
           method: 'POST',
           headers: {
@@ -283,7 +284,7 @@ const Profile = () => {
     setAttendanceLoading(true)
     try {
       const response = await fetch(
-        'http://localhost:5000/api/attendance/checkout',
+        `${base_url}/api/attendance/checkout`,
         {
           method: 'POST',
           headers: {
