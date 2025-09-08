@@ -20,7 +20,7 @@ import Managertask from './components/Pages/Common/Tasks/Managertask.jsx'
 import TaskEmployeeIntern from './components/Pages/Common/Tasks/TaskEmployeeIntern.jsx'
 import ChatApp from './components/Pages/Common/ChatApp.jsx'
 import Profile from './components/Pages/Common/Profile.jsx'
-import Attendance from './components/Pages/Common/Attendance.jsx'
+import Attendance from './components/Pages/Common/manageAttendance.jsx'
 
 import HomePage from './components/Pages/public/HomePage.jsx'
 import ContactPage from './components/Pages/public/ContactPage.jsx'
