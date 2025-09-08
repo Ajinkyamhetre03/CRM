@@ -14,7 +14,7 @@ import {
   Timer
 } from "lucide-react";
 
-const ManagerTaskDashboard = () => {
+const manageAttendance = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [openCalenderfrom, setOpenCalenderfrom] = useState(false);
@@ -264,9 +264,13 @@ const ManagerTaskDashboard = () => {
     });
   };
 
+  // const statusOptions = [
+  //   'full-day', 'half-day', 'absent', 'remote', 'on-leave', 
+  //   'paid-leave', 'sick-leave', 'weekend', 'holiday', 'checked-in'
+  // ];
   const statusOptions = [
-    'full-day', 'half-day', 'absent', 'remote', 'on-leave', 
-    'paid-leave', 'sick-leave', 'weekend', 'holiday', 'checked-in'
+    'half-day',  'remote', 'on-leave', 
+    'paid-leave', 'sick-leave',
   ];
 
   if (isLoading) {
@@ -537,7 +541,7 @@ const ManagerTaskDashboard = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Total Hours
                   </label>
-                  {isEditing ? (
+                  {/* {isEditing ? (
                     <input
                       type="number"
                       step="0.5"
@@ -547,11 +551,15 @@ const ManagerTaskDashboard = () => {
                       onChange={(e) => setEditData({...editData, totalHours: parseFloat(e.target.value) || 0})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     />
-                  ) : (
+                  ) 
+                  : (
                     <p className="text-gray-600 dark:text-gray-400">
                       {selectedDayData.totalHours || 0} hours
                     </p>
-                  )}
+                  )} */}
+                  <p className="text-gray-600 dark:text-gray-400">
+                      {selectedDayData.totalHours || 0} hours
+                    </p>
                 </div>
 
                 {/* Remarks */}
@@ -656,4 +664,4 @@ const ManagerTaskDashboard = () => {
   );
 };
 
-export default ManagerTaskDashboard;
+export default manageAttendance;

@@ -19,6 +19,7 @@ import Intern from "./src/Routes/Route/Intern.js";
 import Chat from "./src/Routes/Route/Chat.js";
 import userRoutes from './src/Routes/Route/DemoUSer.js';
 import Attendance from './src/Routes/Route/Attendance.js'
+import Payroll from './src/Routes/Route/Payroll.js'
 
 // import socket handler
 import { socketHandler } from "./socket.js";
@@ -60,6 +61,7 @@ app.use('/api/manager', Manager);
 app.use('/api/employee', Employee);
 app.use('/api/intern', Intern);
 app.use('/api/attendance', Attendance);
+app.use('/api/financial', Payroll)
 
 if (process.env.DEVELOPMENT === "true") {
   app.use('/api', userRoutes);
