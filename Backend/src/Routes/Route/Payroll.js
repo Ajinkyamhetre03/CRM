@@ -12,11 +12,79 @@ const router = express.Router()
 router.use(auth)
 router.use(checkRoleAndDepartment(['manager'], ['financial']))
 
+// Utility function to calculate working days in a month (excluding weekends)
+const getWorkingDaysInMonth = (year, month) => {
+  const startDate = new Date(year, month - 1, 1)
+  const endDate = new Date(year, month, 0)
+  let workingDays = 0
+  
+  for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
+      workingDays++
+    }
+  }
+  return workingDays
+}
+
+// Utility function to calculate session hours from attendance
+const calculateSessionHours = (sessions) => {
+  if (!sessions || sessions.length === 0) return 0
+  
+  let totalHours = 0
+  sessions.forEach(session => {
+    if (session.loginTime && session.logoutTime) {
+      const loginTime = new Date(session.loginTime)
+      const logoutTime = new Date(session.logoutTime)
+      const diffInMs = logoutTime - loginTime
+      const diffInHours = diffInMs / (1000 * 60 * 60)
+      totalHours += diffInHours
+    } else if (session.loginTime && session.status === 'active') {
+      // If session is still active, calculate hours till now
+      const loginTime = new Date(session.loginTime)
+      const now = new Date()
+      const diffInMs = now - loginTime
+      const diffInHours = diffInMs / (1000 * 60 * 60)
+      totalHours += diffInHours
+    }
+  })
+  
+  return Math.round(totalHours * 100) / 100
+}
+
+// Utility function to calculate pro-rated salary for new employees
+const calculateProRatedSalary = (baseSalary, joiningDate, targetMonth, targetYear) => {
+  const monthStart = new Date(targetYear, targetMonth - 1, 1)
+  const monthEnd = new Date(targetYear, targetMonth, 0)
+  
+  let effectiveStart = joiningDate > monthStart ? joiningDate : monthStart
+  let effectiveEnd = monthEnd
+  
+  const totalDaysInMonth = monthEnd.getDate()
+  const workingDaysInMonth = getWorkingDaysInMonth(targetYear, targetMonth)
+  
+  // Calculate working days from joining date
+  let workingDaysEligible = 0
+  for (let date = new Date(effectiveStart); date <= effectiveEnd; date.setDate(date.getDate() + 1)) {
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workingDaysEligible++
+    }
+  }
+  
+  return {
+    proRatedSalary: (baseSalary * workingDaysEligible) / workingDaysInMonth,
+    workingDaysEligible,
+    workingDaysInMonth,
+    isProRated: joiningDate > monthStart
+  }
+}
+
 // Get all users with payroll summary
 router.get('/users', async (req, res) => {
   try {
     const { 
-      status = 'all', // all, paid, unpaid, pending
+      status = 'all',
       department, 
       month, 
       year, 
@@ -56,6 +124,25 @@ router.get('/users', async (req, res) => {
 
     // Get payroll data for each user
     const usersWithPayroll = await Promise.all(users.map(async (user) => {
+      // Check if user joined after the target month
+      const joiningDate = new Date(user.dateOfJoining)
+      const targetMonthStart = new Date(targetYear, targetMonth - 1, 1)
+      
+      if (joiningDate > new Date(targetYear, targetMonth, 0)) {
+        // User hasn't joined yet for this month
+        return {
+          ...user.toObject(),
+          payrollStatus: 'not_eligible',
+          reason: 'Employee not joined yet',
+          presentDays: 0,
+          lopDays: 0,
+          totalDaysInMonth: 0,
+          workingDays: 0,
+          calculatedSalary: 0,
+          totalWorkedHours: 0
+        }
+      }
+
       // Check if payroll exists for the month
       const payPeriod = `${new Date(targetYear, targetMonth - 1).toLocaleDateString('en-US', { month: 'long' })} ${targetYear}`
       
@@ -73,15 +160,59 @@ router.get('/users', async (req, res) => {
         date: { $gte: startDate, $lte: endDate }
       })
 
-      // Calculate working days and present days
+      // Calculate working days and attendance
       const totalDaysInMonth = endDate.getDate()
-      const presentDays = attendanceRecords.filter(record => 
+      const workingDaysInMonth = getWorkingDaysInMonth(targetYear, targetMonth)
+      
+      // Count different types of days
+      const presentRecords = attendanceRecords.filter(record => 
         ['full-day', 'half-day', 'remote'].includes(record.status)
-      ).length
-      const halfDays = attendanceRecords.filter(record => 
+      )
+      const halfDayRecords = attendanceRecords.filter(record => 
         record.status === 'half-day'
-      ).length
-      const lopDays = Math.max(0, totalDaysInMonth - presentDays - (halfDays * 0.5))
+      )
+      const leaveRecords = attendanceRecords.filter(record => 
+        ['on-leave', 'paid-leave', 'sick-leave'].includes(record.status)
+      )
+
+      // Calculate total worked hours from sessions
+      let totalWorkedHours = 0
+      attendanceRecords.forEach(record => {
+        if (record.sessions && record.sessions.length > 0) {
+          totalWorkedHours += calculateSessionHours(record.sessions)
+        }
+      })
+
+      // Calculate actual working days
+      const actualPresentDays = presentRecords.length - (halfDayRecords.length * 0.5)
+      const paidLeaveDays = leaveRecords.length
+      const totalPaidDays = actualPresentDays + paidLeaveDays
+      
+      // Calculate LOP (Loss of Pay) days
+      const expectedWorkingDays = joiningDate > targetMonthStart ? 
+        calculateProRatedSalary(user.Salary, joiningDate, targetMonth, targetYear).workingDaysEligible :
+        workingDaysInMonth
+      
+      const lopDays = Math.max(0, expectedWorkingDays - totalPaidDays)
+
+      // Calculate salary based on attendance and joining date
+      let salaryCalculation
+      if (joiningDate > targetMonthStart) {
+        salaryCalculation = calculateProRatedSalary(user.Salary, joiningDate, targetMonth, targetYear)
+      } else {
+        salaryCalculation = {
+          proRatedSalary: user.Salary * (totalPaidDays / workingDaysInMonth),
+          workingDaysEligible: workingDaysInMonth,
+          workingDaysInMonth,
+          isProRated: false
+        }
+      }
+
+      // Check for duplicate payroll (validation)
+      const duplicatePayroll = await Payroll.countDocuments({
+        employee: user._id,
+        payPeriod: payPeriod
+      })
 
       return {
         ...user.toObject(),
@@ -89,11 +220,18 @@ router.get('/users', async (req, res) => {
         payrollId: existingPayroll?._id,
         netPay: existingPayroll?.netPay || 0,
         payDate: existingPayroll?.payDate,
-        presentDays,
+        presentDays: actualPresentDays,
         lopDays: Math.round(lopDays * 100) / 100,
         totalDaysInMonth,
-        workingDays: totalDaysInMonth - lopDays,
-        calculatedSalary: user.Salary * ((totalDaysInMonth - lopDays) / totalDaysInMonth)
+        workingDays: expectedWorkingDays,
+        calculatedSalary: Math.round(salaryCalculation.proRatedSalary * 100) / 100,
+        baseSalary: user.Salary,
+        isProRated: salaryCalculation.isProRated,
+        totalWorkedHours: Math.round(totalWorkedHours * 100) / 100,
+        duplicateCount: duplicatePayroll,
+        eligibleWorkingDays: expectedWorkingDays,
+        paidLeaveDays,
+        joiningDate: user.dateOfJoining
       }
     }))
 
@@ -119,9 +257,11 @@ router.get('/users', async (req, res) => {
         totalUsers: usersWithPayroll.length,
         paidUsers: usersWithPayroll.filter(u => u.payrollStatus === 'paid').length,
         unpaidUsers: usersWithPayroll.filter(u => u.payrollStatus === 'unpaid').length,
+        notEligibleUsers: usersWithPayroll.filter(u => u.payrollStatus === 'not_eligible').length,
         totalPayrollAmount: usersWithPayroll
           .filter(u => u.payrollStatus === 'paid')
-          .reduce((sum, u) => sum + u.netPay, 0)
+          .reduce((sum, u) => sum + u.netPay, 0),
+        duplicatePayrolls: usersWithPayroll.filter(u => u.duplicateCount > 1).length
       }
     })
 
@@ -135,97 +275,7 @@ router.get('/users', async (req, res) => {
   }
 })
 
-// Get detailed payroll info for a specific user
-router.get('/users/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params
-    const { month, year } = req.query
-
-    const currentDate = new Date()
-    const targetMonth = month ? parseInt(month) : currentDate.getMonth() + 1
-    const targetYear = year ? parseInt(year) : currentDate.getFullYear()
-
-    // Get user details
-    const user = await User.findById(userId)
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      })
-    }
-
-    // Get attendance data for the month
-    const startDate = new Date(targetYear, targetMonth - 1, 1)
-    const endDate = new Date(targetYear, targetMonth, 0)
-    
-    const attendanceRecords = await Attendance.find({
-      user: userId,
-      date: { $gte: startDate, $lte: endDate }
-    }).sort({ date: 1 })
-
-    // Calculate attendance summary
-    const totalDaysInMonth = endDate.getDate()
-    const presentDays = attendanceRecords.filter(record => 
-      ['full-day', 'half-day', 'remote'].includes(record.status)
-    ).length
-    const halfDays = attendanceRecords.filter(record => 
-      record.status === 'half-day'
-    ).length
-    const absentDays = attendanceRecords.filter(record => 
-      record.status === 'absent'
-    ).length
-    const leaveDays = attendanceRecords.filter(record => 
-      ['on-leave', 'paid-leave', 'sick-leave'].includes(record.status)
-    ).length
-    
-    const actualWorkingDays = presentDays - (halfDays * 0.5)
-    const lopDays = Math.max(0, totalDaysInMonth - actualWorkingDays - leaveDays)
-
-    // Check existing payroll
-    const payPeriod = `${new Date(targetYear, targetMonth - 1).toLocaleDateString('en-US', { month: 'long' })} ${targetYear}`
-    const existingPayroll = await Payroll.findOne({
-      employee: userId,
-      payPeriod: payPeriod
-    }).populate('employee', 'username email employeeCode')
-
-    // Get payroll history
-    const payrollHistory = await Payroll.find({
-      employee: userId
-    }).sort({ payDate: -1 }).limit(6)
-
-    res.json({
-      success: true,
-      data: {
-        user: {
-          ...user.toObject(),
-          attendance: {
-            totalDaysInMonth,
-            presentDays,
-            halfDays,
-            absentDays,
-            leaveDays,
-            lopDays: Math.round(lopDays * 100) / 100,
-            actualWorkingDays: Math.round(actualWorkingDays * 100) / 100,
-            attendancePercentage: Math.round((actualWorkingDays / totalDaysInMonth) * 100)
-          }
-        },
-        currentPayroll: existingPayroll,
-        payrollHistory,
-        attendanceRecords
-      }
-    })
-
-  } catch (error) {
-    console.error('Error fetching user payroll:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch user payroll data',
-      error: error.message
-    })
-  }
-})
-
-// Generate/Create payroll for a user
+// Generate/Create payroll for a user with extensive validations
 router.post('/users/:userId', async (req, res) => {
   try {
     const { userId } = req.params
@@ -235,7 +285,10 @@ router.post('/users/:userId', async (req, res) => {
       earnings = [],
       deductions = [],
       remarks,
-      override = false
+      override = false,
+      manualAttendanceOverride = false,
+      manualPresentDays,
+      manualLeaveDays
     } = req.body
 
     const currentDate = new Date()
@@ -251,9 +304,28 @@ router.post('/users/:userId', async (req, res) => {
       })
     }
 
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot generate payroll for inactive user'
+      })
+    }
+
     const payPeriod = `${new Date(targetYear, targetMonth - 1).toLocaleDateString('en-US', { month: 'long' })} ${targetYear}`
     
-    // Check if payroll already exists
+    // Validation: Check if user joined before or during the target month
+    const joiningDate = new Date(user.dateOfJoining)
+    const targetMonthEnd = new Date(targetYear, targetMonth, 0)
+    
+    if (joiningDate > targetMonthEnd) {
+      return res.status(400).json({
+        success: false,
+        message: `Employee joined on ${joiningDate.toDateString()}, cannot generate payroll for ${payPeriod}`
+      })
+    }
+
+    // Validation: Check for duplicate payroll
     const existingPayroll = await Payroll.findOne({
       employee: userId,
       payPeriod: payPeriod
@@ -262,8 +334,20 @@ router.post('/users/:userId', async (req, res) => {
     if (existingPayroll && !override) {
       return res.status(400).json({
         success: false,
-        message: 'Payroll already exists for this period',
+        message: 'Payroll already exists for this period. Use override flag to update.',
         data: existingPayroll
+      })
+    }
+
+    // Validation: Prevent future month payroll (more than 1 month ahead)
+    const futureLimit = new Date()
+    futureLimit.setMonth(futureLimit.getMonth() + 1)
+    const targetDate = new Date(targetYear, targetMonth - 1, 1)
+    
+    if (targetDate > futureLimit) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot generate payroll more than 1 month in advance'
       })
     }
 
@@ -276,62 +360,90 @@ router.post('/users/:userId', async (req, res) => {
       date: { $gte: startDate, $lte: endDate }
     })
 
-    // Calculate working days
-    const totalDaysInMonth = endDate.getDate()
-    const presentDays = attendanceRecords.filter(record => 
-      ['full-day', 'half-day', 'remote'].includes(record.status)
-    ).length
-    const halfDays = attendanceRecords.filter(record => 
-      record.status === 'half-day'
-    ).length
-    const leaveDays = attendanceRecords.filter(record => 
-      ['on-leave', 'paid-leave', 'sick-leave'].includes(record.status)
-    ).length
+    // Calculate working days and attendance
+    const workingDaysInMonth = getWorkingDaysInMonth(targetYear, targetMonth)
+    let presentDays, leaveDays, totalWorkedHours = 0
 
-    const actualWorkingDays = presentDays - (halfDays * 0.5)
-    const paidDays = Math.round((actualWorkingDays + leaveDays) * 100) / 100
-    const lopDays = Math.max(0, totalDaysInMonth - paidDays)
+    if (manualAttendanceOverride && (manualPresentDays !== undefined || manualLeaveDays !== undefined)) {
+      // HR manual override
+      presentDays = manualPresentDays || 0
+      leaveDays = manualLeaveDays || 0
+    } else {
+      // Calculate from attendance records
+      const presentRecords = attendanceRecords.filter(record => 
+        ['full-day', 'half-day', 'remote'].includes(record.status)
+      )
+      const halfDayRecords = attendanceRecords.filter(record => 
+        record.status === 'half-day'
+      )
+      const leaveRecords = attendanceRecords.filter(record => 
+        ['on-leave', 'paid-leave', 'sick-leave'].includes(record.status)
+      )
 
-    // Calculate salary components
-    const basicSalary = user.Salary
-    const dailySalary = basicSalary / totalDaysInMonth
-    const grossSalary = basicSalary * (paidDays / totalDaysInMonth)
+      presentDays = presentRecords.length - (halfDayRecords.length * 0.5)
+      leaveDays = leaveRecords.length
 
-    // Default earnings if not provided
+      // Calculate total worked hours from sessions
+      attendanceRecords.forEach(record => {
+        if (record.sessions && record.sessions.length > 0) {
+          totalWorkedHours += calculateSessionHours(record.sessions)
+        }
+      })
+    }
+
+    // Calculate salary based on joining date and attendance
+    let salaryCalculation
+    if (joiningDate > startDate) {
+      salaryCalculation = calculateProRatedSalary(user.Salary, joiningDate, targetMonth, targetYear)
+    } else {
+      const totalPaidDays = presentDays + leaveDays
+      salaryCalculation = {
+        proRatedSalary: user.Salary * (totalPaidDays / workingDaysInMonth),
+        workingDaysEligible: workingDaysInMonth,
+        workingDaysInMonth,
+        isProRated: false
+      }
+    }
+
+    const totalPaidDays = presentDays + leaveDays
+    const lopDays = Math.max(0, salaryCalculation.workingDaysEligible - totalPaidDays)
+    const basicSalary = salaryCalculation.proRatedSalary
+
+    // Default earnings calculation
     const defaultEarnings = earnings.length > 0 ? earnings : [
       {
         type: 'Basic Salary',
-        amount: Math.round(grossSalary * 100) / 100,
-        ytdAmount: Math.round(grossSalary * targetMonth * 100) / 100
+        amount: Math.round(basicSalary * 100) / 100,
+        ytdAmount: Math.round(basicSalary * targetMonth * 100) / 100
       },
       {
-        type: 'HRA',
-        amount: Math.round(grossSalary * 0.4 * 100) / 100,
-        ytdAmount: Math.round(grossSalary * 0.4 * targetMonth * 100) / 100
+        type: 'HRA (40%)',
+        amount: Math.round(basicSalary * 0.4 * 100) / 100,
+        ytdAmount: Math.round(basicSalary * 0.4 * targetMonth * 100) / 100
       },
       {
         type: 'Transport Allowance',
-        amount: Math.round(1600 * (paidDays / totalDaysInMonth) * 100) / 100,
+        amount: Math.round(1600 * (totalPaidDays / workingDaysInMonth) * 100) / 100,
         ytdAmount: Math.round(1600 * targetMonth * 100) / 100
       }
     ]
 
-    // Default deductions if not provided
+    // Default deductions calculation
     const defaultDeductions = deductions.length > 0 ? deductions : [
       {
-        type: 'EPF Employee',
-        amount: Math.round(grossSalary * 0.12 * 100) / 100,
-        ytdAmount: Math.round(grossSalary * 0.12 * targetMonth * 100) / 100
+        type: 'EPF Employee (12%)',
+        amount: Math.round(basicSalary * 0.12 * 100) / 100,
+        ytdAmount: Math.round(basicSalary * 0.12 * targetMonth * 100) / 100
       },
       {
         type: 'Professional Tax',
-        amount: 200,
+        amount: totalPaidDays > 15 ? 200 : 0, // Pro-rated PT
         ytdAmount: 200 * targetMonth
       },
       {
-        type: 'TDS',
-        amount: Math.round(grossSalary * 0.05 * 100) / 100,
-        ytdAmount: Math.round(grossSalary * 0.05 * targetMonth * 100) / 100
+        type: 'TDS (5%)',
+        amount: Math.round(basicSalary * 0.05 * 100) / 100,
+        ytdAmount: Math.round(basicSalary * 0.05 * targetMonth * 100) / 100
       }
     ]
 
@@ -340,9 +452,32 @@ router.post('/users/:userId', async (req, res) => {
     const totalDeductions = defaultDeductions.reduce((sum, deduction) => sum + deduction.amount, 0)
     const netPay = Math.round((totalEarnings - totalDeductions) * 100) / 100
 
+    // Validation: Check if net pay is reasonable
+    if (netPay < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Net pay cannot be negative. Please review deductions.',
+        calculation: {
+          totalEarnings,
+          totalDeductions,
+          netPay
+        }
+      })
+    }
+
+    if (netPay > user.Salary * 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Net pay seems unusually high. Please verify calculations.',
+        calculation: {
+          baseSalary: user.Salary,
+          calculatedNetPay: netPay
+        }
+      })
+    }
+
     // Convert amount to words (simplified)
     const convertToWords = (amount) => {
-      // This is a simplified version - you might want to use a proper library
       return `Rupees ${Math.floor(amount).toLocaleString('en-IN')} only`
     }
 
@@ -350,8 +485,9 @@ router.post('/users/:userId', async (req, res) => {
       employee: userId,
       payPeriod,
       payDate: new Date(),
-      paidDays,
-      lopDays,
+      paidDays: Math.round(totalPaidDays * 100) / 100,
+      lopDays: Math.round(lopDays * 100) / 100,
+      totalWorkedHours: Math.round(totalWorkedHours * 100) / 100,
       grossEarnings: Math.round(totalEarnings * 100) / 100,
       totalDeductions: Math.round(totalDeductions * 100) / 100,
       netPay,
@@ -359,7 +495,18 @@ router.post('/users/:userId', async (req, res) => {
       earnings: defaultEarnings,
       deductions: defaultDeductions,
       createdBy: req.user.userId,
-      remarks
+      remarks: remarks || (salaryCalculation.isProRated ? 
+        `Pro-rated salary for joining date: ${joiningDate.toDateString()}` : ''),
+      isProRated: salaryCalculation.isProRated,
+      manualOverride: manualAttendanceOverride,
+      calculationDetails: {
+        baseSalary: user.Salary,
+        workingDaysInMonth: salaryCalculation.workingDaysInMonth,
+        eligibleWorkingDays: salaryCalculation.workingDaysEligible,
+        presentDays,
+        leaveDays,
+        lopDays: Math.round(lopDays * 100) / 100
+      }
     }
 
     let payroll
@@ -378,7 +525,8 @@ router.post('/users/:userId', async (req, res) => {
     res.json({
       success: true,
       message: existingPayroll ? 'Payroll updated successfully' : 'Payroll generated successfully',
-      data: payroll
+      data: payroll,
+      warnings: salaryCalculation.isProRated ? ['This is a pro-rated salary'] : []
     })
 
   } catch (error) {
@@ -391,191 +539,145 @@ router.post('/users/:userId', async (req, res) => {
   }
 })
 
-// Update payroll
-router.put('/users/:userId', async (req, res) => {
+// Bulk payroll generation with validations
+router.post('/bulk-generate', async (req, res) => {
   try {
-    const { userId } = req.params
-    const { payrollId, earnings, deductions, remarks } = req.body
-
-    const payroll = await Payroll.findById(payrollId)
-    if (!payroll) {
-      return res.status(404).json({
-        success: false,
-        message: 'Payroll not found'
-      })
-    }
-
-    if (payroll.employee.toString() !== userId) {
+    const { month, year, userIds, override = false } = req.body
+    
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Payroll does not belong to this user'
+        message: 'User IDs array is required'
       })
     }
 
-    // Update earnings and deductions
-    if (earnings) payroll.earnings = earnings
-    if (deductions) payroll.deductions = deductions
-    if (remarks !== undefined) payroll.remarks = remarks
+    const results = {
+      successful: [],
+      failed: [],
+      skipped: []
+    }
 
-    // Recalculate totals
-    const totalEarnings = payroll.earnings.reduce((sum, earning) => sum + earning.amount, 0)
-    const totalDeductions = payroll.deductions.reduce((sum, deduction) => sum + deduction.amount, 0)
-    
-    payroll.grossEarnings = Math.round(totalEarnings * 100) / 100
-    payroll.totalDeductions = Math.round(totalDeductions * 100) / 100
-    payroll.netPay = Math.round((totalEarnings - totalDeductions) * 100) / 100
+    for (const userId of userIds) {
+      try {
+        // Use the existing single payroll generation logic
+        const response = await fetch(`/api/financial/users/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': req.headers.authorization
+          },
+          body: JSON.stringify({ month, year, override })
+        })
 
-    await payroll.save()
-    await payroll.populate('employee', 'username email employeeCode department')
+        if (response.ok) {
+          const result = await response.json()
+          results.successful.push({
+            userId,
+            payroll: result.data
+          })
+        } else {
+          const error = await response.json()
+          results.failed.push({
+            userId,
+            error: error.message
+          })
+        }
+      } catch (error) {
+        results.failed.push({
+          userId,
+          error: error.message
+        })
+      }
+    }
 
     res.json({
       success: true,
-      message: 'Payroll updated successfully',
-      data: payroll
+      message: `Bulk payroll generation completed. ${results.successful.length} successful, ${results.failed.length} failed`,
+      data: results
     })
 
   } catch (error) {
-    console.error('Error updating payroll:', error)
+    console.error('Error in bulk payroll generation:', error)
     res.status(500).json({
       success: false,
-      message: 'Failed to update payroll',
+      message: 'Failed to process bulk payroll generation',
       error: error.message
     })
   }
 })
 
-// Delete payroll
-router.delete('/payroll/:payrollId', async (req, res) => {
+// Payroll validation endpoint
+router.post('/validate/:userId', async (req, res) => {
   try {
-    const { payrollId } = req.params
+    const { userId } = req.params
+    const { month, year } = req.body
 
-    const payroll = await Payroll.findById(payrollId)
-    if (!payroll) {
+    const user = await User.findById(userId)
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'Payroll not found'
+        message: 'User not found'
       })
     }
 
-    await Payroll.findByIdAndDelete(payrollId)
+    const validations = []
+    const warnings = []
 
-    res.json({
-      success: true,
-      message: 'Payroll deleted successfully'
+    // Check joining date
+    const joiningDate = new Date(user.dateOfJoining)
+    const targetMonthEnd = new Date(year, month, 0)
+    
+    if (joiningDate > targetMonthEnd) {
+      validations.push({
+        type: 'error',
+        message: `Employee joined after the target month`
+      })
+    }
+
+    // Check existing payroll
+    const payPeriod = `${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long' })} ${year}`
+    const existingPayroll = await Payroll.findOne({
+      employee: userId,
+      payPeriod: payPeriod
     })
 
-  } catch (error) {
-    console.error('Error deleting payroll:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete payroll',
-      error: error.message
+    if (existingPayroll) {
+      warnings.push({
+        type: 'warning',
+        message: 'Payroll already exists for this period'
+      })
+    }
+
+    // Check attendance data
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0)
+    
+    const attendanceRecords = await Attendance.find({
+      user: userId,
+      date: { $gte: startDate, $lte: endDate }
     })
-  }
-})
 
-// Get payroll statistics
-router.get('/statistics', async (req, res) => {
-  try {
-    const { year } = req.query
-    const targetYear = year ? parseInt(year) : new Date().getFullYear()
-
-    // Monthly payroll stats
-    const monthlyStats = await Payroll.aggregate([
-      {
-        $match: {
-          payDate: {
-            $gte: new Date(targetYear, 0, 1),
-            $lt: new Date(targetYear + 1, 0, 1)
-          }
-        }
-      },
-      {
-        $group: {
-          _id: { $month: '$payDate' },
-          totalPayroll: { $sum: '$netPay' },
-          employeeCount: { $sum: 1 },
-          averageSalary: { $avg: '$netPay' }
-        }
-      },
-      {
-        $sort: { '_id': 1 }
-      }
-    ])
-
-    // Department-wise stats
-    const departmentStats = await Payroll.aggregate([
-      {
-        $match: {
-          payDate: {
-            $gte: new Date(targetYear, 0, 1),
-            $lt: new Date(targetYear + 1, 0, 1)
-          }
-        }
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'employee',
-          foreignField: '_id',
-          as: 'employeeData'
-        }
-      },
-      {
-        $unwind: '$employeeData'
-      },
-      {
-        $group: {
-          _id: '$employeeData.department',
-          totalPayroll: { $sum: '$netPay' },
-          employeeCount: { $sum: 1 },
-          averageSalary: { $avg: '$netPay' }
-        }
-      }
-    ])
-
-    // Overall stats
-    const overallStats = await Payroll.aggregate([
-      {
-        $match: {
-          payDate: {
-            $gte: new Date(targetYear, 0, 1),
-            $lt: new Date(targetYear + 1, 0, 1)
-          }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          totalPayroll: { $sum: '$netPay' },
-          totalEmployees: { $sum: 1 },
-          averageSalary: { $avg: '$netPay' },
-          highestSalary: { $max: '$netPay' },
-          lowestSalary: { $min: '$netPay' }
-        }
-      }
-    ])
+    if (attendanceRecords.length === 0) {
+      warnings.push({
+        type: 'warning',
+        message: 'No attendance records found for this period'
+      })
+    }
 
     res.json({
       success: true,
       data: {
-        monthly: monthlyStats,
-        department: departmentStats,
-        overall: overallStats[0] || {
-          totalPayroll: 0,
-          totalEmployees: 0,
-          averageSalary: 0,
-          highestSalary: 0,
-          lowestSalary: 0
-        }
+        validations,
+        warnings,
+        canGenerate: validations.length === 0
       }
     })
 
   } catch (error) {
-    console.error('Error fetching statistics:', error)
+    console.error('Error validating payroll:', error)
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch statistics',
+      message: 'Failed to validate payroll',
       error: error.message
     })
   }
